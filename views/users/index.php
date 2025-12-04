@@ -28,6 +28,231 @@ $stats = [
 
 <?php include __DIR__ . '/../../components/header.php'; ?>
 
+<style>
+    :root {
+        --primary-color: #4f46e5;
+        --primary-hover: #4338ca;
+        --success-color: #10b981;
+        --danger-color: #ef4444;
+        --warning-color: #f59e0b;
+        --bg-card: #ffffff;
+        --text-main: #1f2937;
+        --text-muted: #6b7280;
+        --border-color: #e5e7eb;
+        --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Layout Geral */
+    .page-header-flex {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .btn-create {
+        background-color: var(--primary-color);
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.5rem;
+        border: none;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .btn-create:hover {
+        background-color: var(--primary-hover);
+        transform: translateY(-1px);
+    }
+
+    /* Cards de Estatísticas */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card-modern {
+        background: var(--bg-card);
+        padding: 1.5rem;
+        border-radius: 1rem;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--border-color);
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        transition: transform 0.2s;
+    }
+
+    .stat-card-modern:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+    }
+
+    .stat-icon-wrapper {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+    }
+    
+    .bg-blue { background: #e0e7ff; color: #4f46e5; }
+    .bg-green { background: #d1fae5; color: #10b981; }
+    .bg-red { background: #fee2e2; color: #ef4444; }
+    .bg-yellow { background: #fef3c7; color: #d97706; }
+
+    .stat-info h5 { margin: 0; color: var(--text-muted); font-size: 0.875rem; font-weight: 500; }
+    .stat-info .value { font-size: 1.5rem; font-weight: 700; color: var(--text-main); margin-top: 0.25rem; }
+
+    /* Tabela Moderna */
+    .table-container {
+        background: var(--bg-card);
+        border-radius: 1rem;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--border-color);
+        overflow: hidden;
+    }
+
+    .table-header-styled {
+        padding: 1.5rem;
+        border-bottom: 1px solid var(--border-color);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .custom-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .custom-table th {
+        background: #f9fafb;
+        text-align: left;
+        padding: 1rem 1.5rem;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        font-weight: 600;
+        letter-spacing: 0.05em;
+    }
+
+    .custom-table td {
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--border-color);
+        color: var(--text-main);
+        vertical-align: middle;
+    }
+
+    .custom-table tr:last-child td { border-bottom: none; }
+    .custom-table tr:hover { background-color: #f9fafb; }
+
+    /* Componentes da Tabela */
+    .user-info-cell { display: flex; align-items: center; gap: 1rem; }
+    .avatar-circle {
+        width: 40px; height: 40px; border-radius: 50%;
+        background: linear-gradient(135deg, #6366f1, #818cf8);
+        color: white; display: flex; align-items: center; justify-content: center;
+        font-weight: 600; font-size: 1rem;
+    }
+    
+    .status-badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+    }
+    .status-active { background: #d1fae5; color: #065f46; }
+    .status-inactive { background: #fee2e2; color: #991b1b; }
+
+    .role-badge {
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.375rem;
+        font-size: 0.75rem;
+        font-weight: 500;
+        background: #f3f4f6;
+        color: #374151;
+        border: 1px solid #e5e7eb;
+    }
+
+    .action-btn {
+        padding: 0.5rem;
+        border-radius: 0.375rem;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        color: var(--text-muted);
+        transition: color 0.2s;
+    }
+    .action-btn:hover { color: var(--primary-color); background: #f3f4f6; }
+    .action-btn.delete:hover { color: var(--danger-color); }
+
+    /* Modal */
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.5);
+        backdrop-filter: blur(2px);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .modal-content-modern {
+        background: white;
+        width: 100%;
+        max-width: 600px;
+        border-radius: 1rem;
+        box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+        animation: slideIn 0.3s ease-out;
+    }
+
+    @keyframes slideIn {
+        from { transform: translateY(20px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+    }
+
+    .modal-header { padding: 1.5rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
+    .modal-body { padding: 1.5rem; }
+    .modal-footer { padding: 1.5rem; background: #f9fafb; border-top: 1px solid var(--border-color); border-radius: 0 0 1rem 1rem; display: flex; justify-content: flex-end; gap: 0.75rem; }
+
+    /* Inputs Modernos */
+    .form-group label { display: block; margin-bottom: 0.5rem; font-size: 0.875rem; font-weight: 500; color: var(--text-main); }
+    .form-control-modern {
+        width: 100%;
+        padding: 0.625rem 0.875rem;
+        border-radius: 0.5rem;
+        border: 1px solid #d1d5db;
+        transition: border-color 0.15s;
+        font-size: 0.95rem;
+    }
+    .form-control-modern:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
+    
+    .form-row-modern { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+
+    @media (max-width: 768px) {
+        .form-row-modern { grid-template-columns: 1fr; }
+        .table-responsive { overflow-x: auto; }
+        .user-info-cell { min-width: 200px; }
+    }
+</style>
+
 <div class="main-layout">
     <?php include __DIR__ . '/../../components/sidebar.php'; ?>
     
@@ -37,215 +262,137 @@ $stats = [
         <main class="main-content">
             <?php include __DIR__ . '/../../components/alerts.php'; ?>
             
-            <div class="page-header">
-                <h1><i class="fas fa-users-cog"></i> Gerenciar Usuários</h1>
-                <p>Controle total sobre os usuários do sistema</p>
+            <div class="page-header-flex">
+                <div>
+                    <h1 style="margin:0; font-size: 1.8rem; color: var(--text-main);">Gerenciar Usuários</h1>
+                    <p style="margin: 0.5rem 0 0; color: var(--text-muted);">Administre o acesso e as permissões do sistema</p>
+                </div>
+                <button class="btn-create" onclick="openModal()">
+                    <i class="fas fa-plus"></i> Novo Usuário
+                </button>
             </div>
 
-            <!-- Estatísticas -->
-            <div class="cards-grid">
-                <div class="stat-card">
-                    <div class="stat-icon primary">
+            <div class="stats-grid">
+                <div class="stat-card-modern">
+                    <div class="stat-icon-wrapper bg-blue">
                         <i class="fas fa-users"></i>
                     </div>
-                    <div class="stat-content">
-                        <h4>Total de Usuários</h4>
+                    <div class="stat-info">
+                        <h5>Total de Usuários</h5>
                         <div class="value"><?php echo $stats['total']; ?></div>
                     </div>
                 </div>
 
-                <div class="stat-card">
-                    <div class="stat-icon success">
+                <div class="stat-card-modern">
+                    <div class="stat-icon-wrapper bg-green">
                         <i class="fas fa-user-check"></i>
                     </div>
-                    <div class="stat-content">
-                        <h4>Usuários Ativos</h4>
+                    <div class="stat-info">
+                        <h5>Ativos</h5>
                         <div class="value"><?php echo $stats['active']; ?></div>
                     </div>
                 </div>
 
-                <div class="stat-card">
-                    <div class="stat-icon danger">
+                <div class="stat-card-modern">
+                    <div class="stat-icon-wrapper bg-red">
                         <i class="fas fa-user-times"></i>
                     </div>
-                    <div class="stat-content">
-                        <h4>Usuários Inativos</h4>
+                    <div class="stat-info">
+                        <h5>Inativos</h5>
                         <div class="value"><?php echo $stats['inactive']; ?></div>
                     </div>
                 </div>
 
-                <div class="stat-card">
-                    <div class="stat-icon warning">
+                <div class="stat-card-modern">
+                    <div class="stat-icon-wrapper bg-yellow">
                         <i class="fas fa-user-shield"></i>
                     </div>
-                    <div class="stat-content">
-                        <h4>Administradores</h4>
+                    <div class="stat-info">
+                        <h5>Administradores</h5>
                         <div class="value"><?php echo $stats['admins']; ?></div>
                     </div>
                 </div>
             </div>
 
-            <!-- Formulário de Novo Usuário -->
-            <div class="card">
-                <div class="card-header">
-                    <h3><i class="fas fa-user-plus"></i> Cadastrar Novo Usuário</h3>
-                    <button class="btn btn-secondary btn-sm" onclick="limparFormulario()">
-                        <i class="fas fa-eraser"></i> Limpar
-                    </button>
-                </div>
-
-                <form id="userForm">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label><i class="fas fa-user"></i> Nome Completo *</label>
-                            <input type="text" id="name" required>
-                        </div>
-
-                        <div class="form-group">
-                            <label><i class="fas fa-envelope"></i> E-mail *</label>
-                            <input type="email" id="email" required>
-                        </div>
+            <div class="table-container">
+                <div class="table-header-styled">
+                    <h3 style="margin:0; font-size:1.1rem;">Lista de Registros</h3>
                     </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label><i class="fas fa-phone"></i> Telefone</label>
-                            <input type="text" id="phone" placeholder="(00) 00000-0000">
-                        </div>
-
-                        <div class="form-group">
-                            <label><i class="fas fa-lock"></i> Senha *</label>
-                            <input type="password" id="password" required minlength="6">
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label><i class="fas fa-user-tag"></i> Função *</label>
-                            <select id="role" required>
-                                <option value="user">Usuário</option>
-                                <option value="admin">Administrador</option>
-                                <option value="manager">Gerente</option>
-                            </select>
-                        </div>
-
-                        <div class="form-group">
-                            <label><i class="fas fa-toggle-on"></i> Status *</label>
-                            <select id="status" required>
-                                <option value="active">Ativo</option>
-                                <option value="inactive">Inativo</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save"></i> Salvar Usuário
-                    </button>
-                </form>
-            </div>
-
-            <!-- Lista de Usuários -->
-            <div class="card">
-                <div class="card-header">
-                    <h3><i class="fas fa-list"></i> Lista de Usuários</h3>
-                    <span class="badge badge-info"><?php echo count($users); ?> usuários</span>
-                </div>
 
                 <div class="table-responsive">
-                    <table class="table">
+                    <table class="custom-table">
                         <thead>
                             <tr>
-                                <th>ID</th>
-                                <th>Nome</th>
-                                <th>E-mail</th>
-                                <th>Telefone</th>
+                                <th>Usuário</th>
+                                <th>Contato</th>
                                 <th>Função</th>
                                 <th>Status</th>
-                                <th>Último Login</th>
-                                <th>Cadastro</th>
-                                <th>Ações</th>
+                                <th>Último Acesso</th>
+                                <th style="text-align: right;">Ações</th>
                             </tr>
                         </thead>
                         <tbody>
                             <?php foreach ($users as $user): ?>
                                 <tr>
-                                    <td><strong>#<?php echo $user['id']; ?></strong></td>
                                     <td>
-                                        <div style="display: flex; align-items: center; gap: 10px;">
-                                            <div style="width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #1e40af, #3b82f6); display: flex; align-items: center; justify-content: center; color: white; font-weight: 600;">
+                                        <div class="user-info-cell">
+                                            <div class="avatar-circle">
                                                 <?php echo strtoupper(substr($user['name'], 0, 1)); ?>
                                             </div>
-                                            <strong><?php echo htmlspecialchars($user['name']); ?></strong>
+                                            <div>
+                                                <div style="font-weight: 600;"><?php echo htmlspecialchars($user['name']); ?></div>
+                                                <div style="font-size: 0.8rem; color: var(--text-muted);">ID: #<?php echo $user['id']; ?></div>
+                                            </div>
                                         </div>
                                     </td>
-                                    <td><?php echo htmlspecialchars($user['email']); ?></td>
-                                    <td><?php echo htmlspecialchars($user['phone'] ?? '-'); ?></td>
+                                    <td>
+                                        <div style="font-size: 0.9rem;"><?php echo htmlspecialchars($user['email']); ?></div>
+                                        <div style="font-size: 0.8rem; color: var(--text-muted);"><?php echo htmlspecialchars($user['phone'] ?? '-'); ?></div>
+                                    </td>
                                     <td>
                                         <?php 
-                                        $roleColors = [
-                                            'admin' => 'danger',
-                                            'manager' => 'warning',
-                                            'user' => 'info'
-                                        ];
-                                        $roleLabels = [
-                                            'admin' => 'Admin',
-                                            'manager' => 'Gerente',
-                                            'user' => 'Usuário'
-                                        ];
-                                        $roleColor = $roleColors[$user['role']] ?? 'info';
-                                        $roleLabel = $roleLabels[$user['role']] ?? 'Usuário';
+                                        $roles = ['admin' => 'Admin', 'manager' => 'Gerente', 'user' => 'Usuário'];
+                                        echo '<span class="role-badge">' . ($roles[$user['role']] ?? 'Usuário') . '</span>';
                                         ?>
-                                        <span class="badge badge-<?php echo $roleColor; ?>">
-                                            <i class="fas fa-user-shield"></i> <?php echo $roleLabel; ?>
-                                        </span>
                                     </td>
                                     <td>
                                         <?php if ($user['status'] === 'active'): ?>
-                                            <span class="badge badge-success">
-                                                <i class="fas fa-check-circle"></i> Ativo
+                                            <span class="status-badge status-active">
+                                                <i class="fas fa-circle" style="font-size: 6px;"></i> Ativo
                                             </span>
                                         <?php else: ?>
-                                            <span class="badge badge-danger">
-                                                <i class="fas fa-times-circle"></i> Inativo
+                                            <span class="status-badge status-inactive">
+                                                <i class="fas fa-circle" style="font-size: 6px;"></i> Inativo
                                             </span>
                                         <?php endif; ?>
                                     </td>
-                                    <td>
-                                        <?php 
-                                        if ($user['last_login']) {
-                                            echo date('d/m/Y H:i', strtotime($user['last_login']));
-                                        } else {
-                                            echo '<span style="color: var(--text-muted);">Nunca</span>';
-                                        }
-                                        ?>
+                                    <td style="color: var(--text-muted); font-size: 0.9rem;">
+                                        <?php echo $user['last_login'] ? date('d/m/Y H:i', strtotime($user['last_login'])) : 'Nunca'; ?>
                                     </td>
-                                    <td><?php echo date('d/m/Y', strtotime($user['created_at'])); ?></td>
-                                    <td>
-                                        <div class="btn-group">
-                                            <button class="btn btn-info btn-sm" onclick="editUser(<?php echo $user['id']; ?>)" title="Editar">
-                                                <i class="fas fa-edit"></i>
-                                            </button>
-                                            
+                                    <td style="text-align: right;">
+                                        <button class="action-btn" onclick="window.location.href='activity_logs.php?user_id=<?php echo $user['id']; ?>'" title="Ver Logs">
+                                            <i class="fas fa-history"></i>
+                                        </button>
+
+                                        <button class="action-btn" onclick='editUser(<?php echo json_encode($user); ?>)' title="Editar">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        
+                                        <?php if ($user['id'] != $_SESSION['user_id']): ?>
                                             <?php if ($user['status'] === 'active'): ?>
-                                                <button class="btn btn-warning btn-sm" onclick="toggleStatus(<?php echo $user['id']; ?>, 'inactive')" title="Desativar">
+                                                <button class="action-btn" onclick="toggleStatus(<?php echo $user['id']; ?>, 'inactive')" title="Desativar">
                                                     <i class="fas fa-ban"></i>
                                                 </button>
                                             <?php else: ?>
-                                                <button class="btn btn-success btn-sm" onclick="toggleStatus(<?php echo $user['id']; ?>, 'active')" title="Ativar">
+                                                <button class="action-btn" onclick="toggleStatus(<?php echo $user['id']; ?>, 'active')" title="Ativar">
                                                     <i class="fas fa-check"></i>
                                                 </button>
                                             <?php endif; ?>
                                             
-                                            <?php if ($user['id'] != $_SESSION['user_id']): ?>
-                                                <button class="btn btn-danger btn-sm" onclick="deleteUser(<?php echo $user['id']; ?>)" title="Excluir">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            <?php endif; ?>
-                                            
-                                            <button class="btn btn-secondary btn-sm" onclick="viewLogs(<?php echo $user['id']; ?>)" title="Ver Logs">
-                                                <i class="fas fa-history"></i>
+                                            <button class="action-btn delete" onclick="deleteUser(<?php echo $user['id']; ?>)" title="Excluir">
+                                                <i class="fas fa-trash-alt"></i>
                                             </button>
-                                        </div>
+                                        <?php endif; ?>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
@@ -257,19 +404,102 @@ $stats = [
     </div>
 </div>
 
+<div id="userModal" class="modal-overlay">
+    <div class="modal-content-modern">
+        <div class="modal-header">
+            <h3 style="margin:0;" id="modalTitle">Novo Usuário</h3>
+            <button class="action-btn" onclick="closeModal()"><i class="fas fa-times"></i></button>
+        </div>
+        <form id="userForm">
+            <div class="modal-body">
+                <input type="hidden" id="userId">
+                
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label>Nome Completo *</label>
+                    <input type="text" id="name" class="form-control-modern" required placeholder="Ex: João Silva">
+                </div>
+
+                <div class="form-row-modern">
+                    <div class="form-group">
+                        <label>E-mail *</label>
+                        <input type="email" id="email" class="form-control-modern" required placeholder="joao@email.com">
+                    </div>
+                    <div class="form-group">
+                        <label>Telefone</label>
+                        <input type="text" id="phone" class="form-control-modern" placeholder="(00) 00000-0000">
+                    </div>
+                </div>
+
+                <div class="form-row-modern">
+                    <div class="form-group">
+                        <label>Senha <span id="passwordHint" style="font-weight: normal; color: #999; font-size: 0.8em;">*</span></label>
+                        <input type="password" id="password" class="form-control-modern" minlength="6">
+                    </div>
+                    <div class="form-group">
+                        <label>Função *</label>
+                        <select id="role" class="form-control-modern" required>
+                            <option value="user">Usuário</option>
+                            <option value="manager">Gerente</option>
+                            <option value="admin">Administrador</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Status *</label>
+                    <select id="status" class="form-control-modern" required>
+                        <option value="active">Ativo</option>
+                        <option value="inactive">Inativo</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" style="border:1px solid #ddd; background:white; color:#333; padding: 0.6rem 1rem; border-radius: 0.5rem; cursor:pointer;" onclick="closeModal()">Cancelar</button>
+                <button type="submit" class="btn-create" style="box-shadow: none;">Salvar Usuário</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
 let editingUserId = null;
+const modal = document.getElementById('userModal');
 
+// Funções do Modal
+function openModal() {
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden'; // Previne scroll no fundo
+}
+
+function closeModal() {
+    modal.style.display = 'none';
+    document.body.style.overflow = 'auto';
+    limparFormulario();
+}
+
+// Fechar modal ao clicar fora
+modal.addEventListener('click', function(e) {
+    if (e.target === modal) closeModal();
+});
+
+// Envio do Formulário
 document.getElementById('userForm').addEventListener('submit', async function(e) {
     e.preventDefault();
     
+    // Validação básica de senha na criação
+    const password = document.getElementById('password').value;
+    if (!editingUserId && !password) {
+        alert('A senha é obrigatória para novos usuários');
+        return;
+    }
+
     const data = {
         action: editingUserId ? 'update' : 'create',
         id: editingUserId,
         name: document.getElementById('name').value,
         email: document.getElementById('email').value,
         phone: document.getElementById('phone').value,
-        password: document.getElementById('password').value,
+        password: password, // Se vazio na edição, o backend deve ignorar
         role: document.getElementById('role').value,
         status: document.getElementById('status').value
     };
@@ -284,31 +514,52 @@ document.getElementById('userForm').addEventListener('submit', async function(e)
         const result = await response.json();
         
         if (result.success) {
-            Utils.showAlert(result.message, 'success');
-            limparFormulario();
-            setTimeout(() => location.reload(), 1500);
+            // Usa o Utils se existir, senão alert normal
+            if(typeof Utils !== 'undefined') Utils.showAlert(result.message, 'success');
+            else alert(result.message);
+            
+            closeModal();
+            setTimeout(() => location.reload(), 1000);
         } else {
-            Utils.showAlert(result.message, 'error');
+            if(typeof Utils !== 'undefined') Utils.showAlert(result.message, 'error');
+            else alert(result.message || 'Erro ao salvar');
         }
     } catch (error) {
-        Utils.showAlert('Erro ao processar requisição', 'error');
+        console.error(error);
+        alert('Erro ao processar requisição');
     }
 });
 
 function limparFormulario() {
     document.getElementById('userForm').reset();
     editingUserId = null;
+    document.getElementById('modalTitle').innerText = 'Novo Usuário';
+    document.getElementById('passwordHint').innerText = '*';
+    document.getElementById('password').required = true;
 }
 
-function editUser(id) {
-    // Implementar edição
-    Utils.showAlert('Funcionalidade em desenvolvimento', 'info');
+// Preencher formulário para edição
+function editUser(user) {
+    editingUserId = user.id;
+    
+    document.getElementById('modalTitle').innerText = 'Editar Usuário';
+    document.getElementById('userId').value = user.id;
+    document.getElementById('name').value = user.name;
+    document.getElementById('email').value = user.email;
+    document.getElementById('phone').value = user.phone || '';
+    document.getElementById('role').value = user.role;
+    document.getElementById('status').value = user.status;
+    
+    // Senha não é obrigatória na edição
+    document.getElementById('password').value = '';
+    document.getElementById('password').required = false;
+    document.getElementById('passwordHint').innerText = '(deixe em branco para manter)';
+    
+    openModal();
 }
 
 async function toggleStatus(id, newStatus) {
-    if (!confirm(`Deseja realmente ${newStatus === 'active' ? 'ativar' : 'desativar'} este usuário?`)) {
-        return;
-    }
+    if (!confirm(`Deseja realmente ${newStatus === 'active' ? 'ativar' : 'desativar'} este usuário?`)) return;
     
     try {
         const response = await fetch('<?php echo BASE_URL; ?>controllers/user_controller.php', {
@@ -318,22 +569,15 @@ async function toggleStatus(id, newStatus) {
         });
         
         const result = await response.json();
-        
-        if (result.success) {
-            Utils.showAlert(result.message, 'success');
-            setTimeout(() => location.reload(), 1000);
-        } else {
-            Utils.showAlert(result.message, 'error');
-        }
+        if (result.success) location.reload();
+        else alert(result.message);
     } catch (error) {
-        Utils.showAlert('Erro ao processar requisição', 'error');
+        alert('Erro de conexão');
     }
 }
 
 async function deleteUser(id) {
-    if (!confirm('Deseja realmente excluir este usuário? Esta ação não pode ser desfeita!')) {
-        return;
-    }
+    if (!confirm('Esta ação é irreversível. Deseja excluir?')) return;
     
     try {
         const response = await fetch('<?php echo BASE_URL; ?>controllers/user_controller.php', {
@@ -343,21 +587,11 @@ async function deleteUser(id) {
         });
         
         const result = await response.json();
-        
-        if (result.success) {
-            Utils.showAlert(result.message, 'success');
-            setTimeout(() => location.reload(), 1000);
-        } else {
-            Utils.showAlert(result.message, 'error');
-        }
+        if (result.success) location.reload();
+        else alert(result.message);
     } catch (error) {
-        Utils.showAlert('Erro ao processar requisição', 'error');
+        alert('Erro de conexão');
     }
-}
-
-function viewLogs(id) {
-    // Implementar visualização de logs
-    Utils.showAlert('Funcionalidade em desenvolvimento', 'info');
 }
 </script>
 
