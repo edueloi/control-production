@@ -43,7 +43,6 @@ $pageTitle = 'Login';
                 <div class="input-wrapper">
                     <i class="fas fa-lock"></i>
                     <input type="password" id="password" name="password" placeholder="Sua senha secreta" required>
-                    <i class="fas fa-eye toggle-password" onclick="togglePassword()" style="cursor: pointer; position: absolute; right: 15px; color: #94a3b8;"></i>
                 </div>
             </div>
             
@@ -53,7 +52,7 @@ $pageTitle = 'Login';
                     <span class="checkmark"></span>
                     Lembrar-me
                 </label>
-                <a href="<?php echo BASE_URL; ?>forgot-password.php" class="forgot-link">Esqueceu a senha?</a>
+                <a href="<?php echo BASE_URL; ?>recover.php" class="forgot-link">Esqueceu a senha?</a>
             </div>
             
             <button type="submit" class="btn-login">
@@ -268,35 +267,6 @@ $pageTitle = 'Login';
         font-weight: 600;
         text-decoration: none;
     }
-    
-    .input-wrapper {
-        position: relative;
-    }
-    
-    .toggle-password {
-        transition: color 0.3s;
-    }
-    
-    .toggle-password:hover {
-        color: #1e40af !important;
-    }
 </style>
-
-<script>
-function togglePassword() {
-    const passwordInput = document.getElementById('password');
-    const toggleIcon = document.querySelector('.toggle-password');
-    
-    if (passwordInput.type === 'password') {
-        passwordInput.type = 'text';
-        toggleIcon.classList.remove('fa-eye');
-        toggleIcon.classList.add('fa-eye-slash');
-    } else {
-        passwordInput.type = 'password';
-        toggleIcon.classList.remove('fa-eye-slash');
-        toggleIcon.classList.add('fa-eye');
-    }
-}
-</script>
 
 <?php include __DIR__ . '/components/footer.php'; ?>

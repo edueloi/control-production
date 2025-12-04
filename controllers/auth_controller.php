@@ -18,9 +18,25 @@ try {
             $user = $stmt->fetch(PDO::FETCH_ASSOC);
             
             if ($user && password_verify($password, $user['password'])) {
+                // Verificar se usuário está ativo
+                if (isset($user['status']) && $user['status'] === 'inactive') {
+                    setErrorMessage('Usuário inativo! Entre em contato com o administrador.');
+                    header('Location: ' . BASE_URL . 'login.php');
+                    exit;
+                }
+                
                 $_SESSION['user_id'] = $user['id'];
                 $_SESSION['user_name'] = $user['name'];
                 $_SESSION['user_email'] = $user['email'];
+                $_SESSION['user_role'] = $user['role'] ?? 'user';
+                
+                // Atualizar last_login
+                $stmt = $db->prepare("UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?");
+                $stmt->execute([$user['id']]);
+                
+                // Registrar login no log
+                $stmt = $db->prepare("INSERT INTO activity_logs (user_id, action, description, ip_address) VALUES (?, ?, ?, ?)");
+                $stmt->execute([$user['id'], 'Login', 'Usuário fez login no sistema', $_SERVER['REMOTE_ADDR']]);
                 
                 setSuccessMessage('Login realizado com sucesso!');
                 header('Location: ' . BASE_URL . 'views/dashboard.php');
@@ -61,8 +77,13 @@ try {
             
             // Criar usuário
             $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
-            $stmt = $db->prepare("INSERT INTO users (name, email, password) VALUES (?, ?, ?)");
-            $stmt->execute([$name, $email, $hashedPassword]);
+            
+            // Primeiro usuário é automaticamente admin
+            $count = $db->query("SELECT COUNT(*) FROM users")->fetchColumn();
+            $role = ($count == 0) ? 'admin' : 'user';
+            
+            $stmt = $db->prepare("INSERT INTO users (name, email, password, role, status) VALUES (?, ?, ?, ?, 'active')");
+            $stmt->execute([$name, $email, $hashedPassword, $role]);
             
             setSuccessMessage('Cadastro realizado com sucesso! Faça login para continuar.');
             header('Location: ' . BASE_URL . 'login.php');
@@ -83,7 +104,7 @@ try {
                 setSuccessMessage('Se o e-mail estiver cadastrado, você receberá as instruções.');
             }
             
-            header('Location: ' . BASE_URL . 'login.php');
+            header('Location: ../login.php');
             exit;
             break;
             
