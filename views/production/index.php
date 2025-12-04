@@ -290,27 +290,40 @@ function calcularProducao() {
 
 async function salvarProducao() {
     if (!calculatedData) {
-        Utils.showAlert('Calcule a produção primeiro', 'error');
+        alert('Calcule a produção primeiro!');
         return;
     }
+    
+    if (!confirm('Confirma o salvamento da produção? O estoque será atualizado.')) {
+        return;
+    }
+    
+    console.log('Salvando produção:', calculatedData);
     
     try {
         const response = await fetch('<?php echo BASE_URL; ?>controllers/production_controller.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'create', ...calculatedData })
+            body: JSON.stringify({ 
+                action: 'save', 
+                ...calculatedData 
+            })
         });
         
+        console.log('Response status:', response.status);
         const result = await response.json();
+        console.log('Response data:', result);
         
         if (result.success) {
-            Utils.showAlert('Produção salva com sucesso!', 'success');
-            setTimeout(() => location.reload(), 1000);
+            alert('✓ Produção salva com sucesso!');
+            window.location.reload();
         } else {
-            Utils.showAlert('Erro ao salvar produção', 'error');
+            alert('Erro ao salvar produção:\n' + (result.message || 'Erro desconhecido'));
+            console.error('Erro completo:', result);
         }
     } catch (error) {
-        Utils.showAlert('Erro ao salvar produção', 'error');
+        alert('Erro ao salvar produção:\n' + error.message);
+        console.error('Erro catch:', error);
     }
 }
 
