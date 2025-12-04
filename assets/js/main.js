@@ -1,4 +1,15 @@
 // Funções utilitárias
+// Sidebar toggle (desktop)
+document.addEventListener('DOMContentLoaded', function() {
+    var sidebarToggleDesktop = document.getElementById('sidebarToggleDesktop');
+    var sidebar = document.getElementById('appSidebar');
+    if (sidebarToggleDesktop && sidebar) {
+        sidebarToggleDesktop.addEventListener('click', function(e) {
+            e.stopPropagation();
+            sidebar.classList.toggle('is-collapsed');
+        });
+    }
+});
 const Utils = {
     // Formatar moeda
     formatMoney(value) {

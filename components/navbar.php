@@ -1,38 +1,76 @@
 <?php
-// 1. Lógica PHP para obter dados do utilizador
+// 1. Lógica PHP: Obter dados do utilizador
 $currentUser = function_exists('getCurrentUser') ? getCurrentUser() : null;
 
-// Fallback se não existir função, busca na sessão
+// Fallback se não existir função
 if (!$currentUser) {
     $currentUser = $_SESSION['user_data'] ?? [
-        'name' => $_SESSION['user_name'] ?? 'Utilizador Convidado',
-        'role' => $_SESSION['user_role'] ?? 'visitante'
+        'name' => ($_SESSION['user_name'] ?? 'Utilizador Convidado'),
+        'role' => ($_SESSION['user_role'] ?? 'visitante')
     ];
 }
 
-// 2. Lógica para gerar as Iniciais (ex: "João Silva" -> "JS")
+// Gerar Iniciais (ex: "Flavio Silva" -> "FS")
 $parts = explode(' ', trim($currentUser['name']));
 $initials = strtoupper(substr($parts[0], 0, 1));
 if (count($parts) > 1) {
     $initials .= strtoupper(substr(end($parts), 0, 1));
 }
+
+// 2. Lógica PHP: Alertas (Estoque e Validade)
+$db = isset($db) ? $db : (class_exists('Database') ? Database::getInstance()->getConnection() : null);
+$alertas = [];
+$alertCount = 0;
+
+if ($db) {
+    try {
+        // Alerta de Estoque Baixo
+        $lowStock = $db->query("SELECT * FROM products WHERE stock <= min_stock AND min_stock > 0 ORDER BY stock ASC LIMIT 5")->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($lowStock as $p) {
+            $alertas[] = [
+                'icon' => 'fa-exclamation-triangle',
+                'color' => '#ef4444', // Vermelho
+                'text' => 'Estoque baixo: ' . htmlspecialchars($p['description'])
+            ];
+        }
+        $alertCount += count($lowStock);
+
+        // Alerta de Validade (verifica se a coluna existe para evitar erro)
+        $cols = $db->query("PRAGMA table_info(products)")->fetchAll(PDO::FETCH_COLUMN, 1);
+        // Ajuste 'validade' para o nome real da tua coluna no banco, se for diferente
+        $colValidade = in_array('validade', $cols) ? 'validade' : (in_array('expiry_date', $cols) ? 'expiry_date' : null);
+
+        if ($colValidade) {
+            $validade = $db->query("SELECT * FROM products WHERE $colValidade IS NOT NULL AND $colValidade <> '' AND DATE($colValidade) <= DATE('now', '+30 days') ORDER BY $colValidade ASC LIMIT 5")->fetchAll(PDO::FETCH_ASSOC);
+            foreach ($validade as $p) {
+                $isVencido = strtotime($p[$colValidade]) < time();
+                $alertas[] = [
+                    'icon' => $isVencido ? 'fa-times-circle' : 'fa-clock',
+                    'color' => $isVencido ? '#b91c1c' : '#f59e0b', // Vermelho escuro ou Laranja
+                    'text' => ($isVencido ? 'Vencido: ' : 'Vence em breve: ') . htmlspecialchars($p['description'])
+                ];
+            }
+            $alertCount += count($validade);
+        }
+    } catch (Exception $e) {
+        // Silencia erros de SQL para não quebrar a navbar
+    }
+}
 ?>
 
 <style>
-    /* Variáveis de Cores e Tamanhos */
     :root {
         --nav-height: 70px;
         --nav-bg: #ffffff;
-        --nav-text-main: #1e293b; /* Slate 800 */
-        --nav-text-sub: #64748b;  /* Slate 500 */
-        --nav-primary: #4f46e5;   /* Indigo 600 */
-        --nav-hover: #f1f5f9;     /* Slate 100 */
+        --nav-text-main: #1e293b;
+        --nav-text-sub: #64748b;
+        --nav-primary: #4f46e5;
+        --nav-hover: #f1f5f9;
         --nav-border: #e2e8f0;
-        --nav-danger: #ef4444;
-        --sidebar-width: 260px; /* Deve bater com o CSS da tua sidebar */
+        --sidebar-width: 260px;
     }
 
-    /* Container Principal */
+    /* Navbar Container */
     .navbar {
         height: var(--nav-height);
         background: var(--nav-bg);
@@ -43,190 +81,178 @@ if (count($parts) > 1) {
         position: fixed;
         top: 0;
         right: 0;
-        /* Calcula largura para não ficar por cima da sidebar */
-        width: calc(100% - var(--sidebar-width)); 
+        width: calc(100% - var(--sidebar-width));
         z-index: 900;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-        transition: width 0.3s ease;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
         border-bottom: 1px solid var(--nav-border);
+        transition: width 0.3s ease;
     }
 
-    /* --- Lado Esquerdo --- */
-    .navbar-left {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-    }
-
-    .page-info {
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-    }
-
+    /* Lado Esquerdo */
+    .navbar-left { display: flex; align-items: center; gap: 1rem; }
+    
     .page-title {
         margin: 0;
         font-size: 1.1rem;
         font-weight: 700;
         color: var(--nav-text-main);
-        line-height: 1.2;
     }
-
+    
     .current-date {
         font-size: 0.75rem;
         color: var(--nav-text-sub);
         font-weight: 500;
+        text-transform: capitalize;
     }
 
-    /* --- Lado Direito --- */
-    .navbar-right {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-    }
+    /* Lado Direito */
+    .navbar-right { display: flex; align-items: center; gap: 0.8rem; }
 
-    /* Botões de Ícone (Toggle, Sino, Logout) */
+    /* Botões (Ícones) */
     .icon-btn {
-        width: 40px;
-        height: 40px;
+        width: 40px; height: 40px;
         border-radius: 10px;
         border: none;
         background: transparent;
         color: var(--nav-text-sub);
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        display: flex; align-items: center; justify-content: center;
         cursor: pointer;
-        transition: all 0.2s ease;
+        transition: all 0.2s;
         font-size: 1.1rem;
-        text-decoration: none;
         position: relative;
     }
+    .icon-btn:hover { background: var(--nav-hover); color: var(--nav-primary); }
+    .logout-btn:hover { background: #fee2e2; color: #ef4444; }
 
-    .icon-btn:hover {
-        background: var(--nav-hover);
-        color: var(--nav-primary);
-        transform: translateY(-1px);
-    }
-
-    .logout-btn:hover {
-        color: var(--nav-danger);
-        background: #fee2e2;
-    }
-
-    /* Bolinha de Notificação */
+    /* Badge de Notificação */
     .badge-dot {
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        width: 8px;
-        height: 8px;
-        background: var(--nav-danger);
+        position: absolute; top: 10px; right: 10px;
+        width: 8px; height: 8px;
+        background: #ef4444;
         border-radius: 50%;
-        border: 2px solid var(--nav-bg);
+        border: 2px solid white;
+    }
+    
+    .alert-count {
+        position: absolute; top: -5px; right: -5px;
+        background: #ef4444; color: white;
+        font-size: 0.7rem; font-weight: bold;
+        padding: 2px 5px; border-radius: 10px;
     }
 
-    /* Separador Vertical */
-    .separator {
-        width: 1px;
-        height: 24px;
-        background: var(--nav-border);
-        margin: 0 0.5rem;
-    }
-
-    /* Pílula do Utilizador (Perfil) */
+    /* Perfil do Utilizador (Pílula) */
     .user-pill {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
+        display: flex; align-items: center; gap: 0.8rem;
         padding: 0.25rem 0.25rem 0.25rem 1rem;
-        background: transparent;
         border-radius: 50px;
+        cursor: pointer;
+        transition: background 0.2s;
         border: 1px solid transparent;
-        transition: all 0.2s ease;
-        cursor: default;
     }
-
-    .user-pill:hover {
+    .user-pill:hover, .user-pill.active {
         background: var(--nav-hover);
         border-color: var(--nav-border);
     }
 
-    .user-text {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-end;
-        line-height: 1.1;
-    }
-
-    .user-text .name {
-        font-size: 0.85rem;
-        font-weight: 600;
-        color: var(--nav-text-main);
-    }
-
-    .user-text .role {
-        font-size: 0.7rem;
-        color: var(--nav-text-sub);
-        text-transform: uppercase;
-        font-weight: 600;
-        letter-spacing: 0.5px;
-    }
+    .user-text { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.1; }
+    .user-text .name { font-size: 0.85rem; font-weight: 600; color: var(--nav-text-main); }
+    .user-text .role { font-size: 0.7rem; color: var(--nav-text-sub); text-transform: uppercase; font-weight: 700; }
 
     .user-avatar {
-        width: 38px;
-        height: 38px;
-        /* Gradiente bonito */
+        width: 38px; height: 38px;
         background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%);
-        color: white;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 700;
-        font-size: 0.95rem;
-        box-shadow: 0 3px 6px rgba(79, 70, 229, 0.25);
+        color: white; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-weight: 700; font-size: 0.95rem;
+        box-shadow: 0 2px 5px rgba(99, 102, 241, 0.3);
     }
 
-    /* Botão Mobile (Hambúrguer) - Escondido no Desktop */
-    .mobile-toggle {
+    /* Dropdown Menu */
+    .user-dropdown-menu {
         display: none;
-        margin-right: 0.5rem;
+        position: absolute;
+        top: 75px; right: 1.5rem;
+        width: 240px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        border: 1px solid var(--nav-border);
+        z-index: 1000;
+        animation: slideDown 0.2s ease;
+    }
+    .user-dropdown-menu.open { display: block; }
+    
+    @keyframes slideDown {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
     }
 
-    /* --- Responsividade (Mobile < 768px) --- */
+    .dropdown-header {
+        padding: 1rem;
+        border-bottom: 1px solid var(--nav-hover);
+        display: flex; align-items: center; gap: 1rem;
+    }
+    .dropdown-info .d-name { display: block; font-weight: 700; color: var(--nav-text-main); }
+    .dropdown-info .d-role { display: block; font-size: 0.75rem; color: var(--nav-text-sub); }
+
+    .dropdown-item {
+        display: flex; align-items: center; gap: 0.8rem;
+        padding: 0.8rem 1.2rem;
+        color: var(--nav-text-main);
+        text-decoration: none;
+        font-size: 0.9rem;
+        transition: background 0.2s;
+    }
+    .dropdown-item:hover { background: var(--nav-hover); color: var(--nav-primary); }
+    .dropdown-item i { width: 20px; text-align: center; color: var(--nav-text-sub); }
+    .dropdown-logout { color: #ef4444; border-top: 1px solid var(--nav-hover); }
+    .dropdown-logout:hover { background: #fef2f2; color: #dc2626; }
+
+    /* Modal de Alertas */
+    .alert-modal {
+        display: none; position: fixed;
+        top: 75px; right: 80px; /* Posição relativa ao sino */
+        width: 320px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        border: 1px solid var(--nav-border);
+        z-index: 1000;
+        animation: slideDown 0.2s ease;
+    }
+    .alert-modal.open { display: block; }
+    
+    .alert-header {
+        padding: 0.8rem 1rem;
+        border-bottom: 1px solid var(--nav-hover);
+        font-weight: 700; color: var(--nav-text-main);
+        display: flex; justify-content: space-between; align-items: center;
+    }
+    .alert-body { max-height: 300px; overflow-y: auto; }
+    .alert-item {
+        padding: 0.8rem 1rem;
+        border-bottom: 1px solid var(--nav-hover);
+        display: flex; align-items: flex-start; gap: 0.8rem;
+        font-size: 0.85rem; color: #334155;
+    }
+    .alert-item:last-child { border-bottom: none; }
+    .alert-empty { padding: 2rem; text-align: center; color: var(--nav-text-sub); }
+
+    /* Separador */
+    .separator { width: 1px; height: 24px; background: var(--nav-border); }
+    
+    /* Botão Mobile */
+    .mobile-toggle { display: none; }
+
+    /* Responsividade */
     @media (max-width: 768px) {
-        .navbar {
-            width: 100%; /* Ocupa a tela toda */
-            padding: 0 1rem;
-        }
-
-        .mobile-toggle {
-            display: flex; /* Aparece no mobile */
-        }
-
-        /* Esconder detalhes para poupar espaço */
-        .user-text, .current-date {
-            display: none;
-        }
-
-        .user-pill {
-            padding: 0;
-            border: none;
-        }
-        
-        .user-pill:hover {
-            background: transparent;
-            border: none;
-        }
-        
-        .separator {
-            display: none;
-        }
-        
-        .page-title {
-            font-size: 1rem;
-        }
+        .navbar { width: 100%; padding: 0 1rem; }
+        .mobile-toggle { display: flex; }
+        .user-text, .current-date, .separator { display: none; }
+        .user-pill { padding: 0; border: none; }
+        .user-pill:hover { background: transparent; }
+        .alert-modal { right: 10px; left: 10px; width: auto; }
+        .user-dropdown-menu { right: 10px; width: 200px; }
     }
 </style>
 
@@ -239,7 +265,7 @@ if (count($parts) > 1) {
         
         <div class="page-info">
             <h3 class="page-title">
-                <?php echo isset($pageTitle) ? $pageTitle : 'Painel de Controlo'; ?>
+                <?php echo isset($pageTitle) ? htmlspecialchars($pageTitle) : 'Painel de Controlo'; ?>
             </h3>
             <span class="current-date">
                 <?php 
@@ -252,15 +278,38 @@ if (count($parts) > 1) {
 
     <div class="navbar-right">
         
-        <button class="icon-btn notification-btn" title="Notificações">
+        <button class="icon-btn notification-btn" id="alertBell" title="Notificações">
             <i class="far fa-bell"></i>
-            <span class="badge-dot"></span>
+            <?php if ($alertCount > 0): ?>
+                <span class="alert-count"><?php echo $alertCount; ?></span>
+            <?php endif; ?>
         </button>
+
+        <div class="alert-modal" id="alertModal">
+            <div class="alert-header">
+                <span>Notificações</span>
+                <button onclick="document.getElementById('alertModal').classList.remove('open')" style="background:none;border:none;cursor:pointer;color:#94a3b8;"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="alert-body">
+                <?php if ($alertCount === 0): ?>
+                    <div class="alert-empty">
+                        <i class="fas fa-check-circle" style="color:#10b981; font-size:1.5rem; margin-bottom:0.5rem;"></i><br>
+                        Tudo certo! Sem alertas.
+                    </div>
+                <?php else: ?>
+                    <?php foreach ($alertas as $a): ?>
+                        <div class="alert-item">
+                            <i class="fas <?php echo $a['icon']; ?>" style="color: <?php echo $a['color']; ?>; margin-top:3px;"></i>
+                            <span><?php echo $a['text']; ?></span>
+                        </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </div>
+        </div>
 
         <div class="separator"></div>
 
-
-        <div class="user-pill" id="userMenuToggle" tabindex="0" style="cursor:pointer;">
+        <div class="user-pill" id="userMenuToggle">
             <div class="user-text">
                 <span class="name"><?php echo htmlspecialchars($currentUser['name']); ?></span>
                 <span class="role"><?php echo ucfirst($currentUser['role'] ?? 'Utilizador'); ?></span>
@@ -269,172 +318,91 @@ if (count($parts) > 1) {
                 <span><?php echo $initials; ?></span>
             </div>
         </div>
-        <!-- Dropdown Menu -->
+
         <div class="user-dropdown-menu" id="userDropdownMenu">
             <div class="dropdown-header">
-                <div class="dropdown-avatar"><?php echo $initials; ?></div>
+                <div class="user-avatar" style="width:32px;height:32px;font-size:0.8rem;"><?php echo $initials; ?></div>
                 <div class="dropdown-info">
-                    <div class="dropdown-name"><?php echo htmlspecialchars($currentUser['name']); ?></div>
-                    <div class="dropdown-role"><?php echo ucfirst($currentUser['role'] ?? 'Utilizador'); ?></div>
+                    <span class="d-name"><?php echo htmlspecialchars($currentUser['name']); ?></span>
+                    <span class="d-role"><?php echo ucfirst($currentUser['role'] ?? 'Utilizador'); ?></span>
                 </div>
             </div>
-            <a href="<?php echo BASE_URL; ?>views/profile/" class="dropdown-item"><i class="fas fa-user"></i> Meu Perfil</a>
-            <a href="<?php echo BASE_URL; ?>views/settings/" class="dropdown-item"><i class="fas fa-cog"></i> Configurações</a>
-            <?php if (($currentUser['role'] ?? ($_SESSION['user_role'] ?? '')) === 'admin'): ?>
-                <div class="dropdown-divider"></div>
-                <a href="<?php echo BASE_URL; ?>views/users/" class="dropdown-item"><i class="fas fa-users-cog"></i> Usuários</a>
-                <a href="<?php echo BASE_URL; ?>views/permissions/" class="dropdown-item"><i class="fas fa-user-shield"></i> Permissões</a>
-            <?php endif; ?>
-            <div class="dropdown-divider"></div>
-            <a href="<?php echo BASE_URL; ?>logout.php" class="dropdown-item dropdown-logout"><i class="fas fa-sign-out-alt"></i> Sair</a>
-        </div>
+            
+            <a href="<?php echo BASE_URL; ?>views/profile/" class="dropdown-item">
+                <i class="fas fa-user-circle"></i> Meu Perfil
+            </a>
+            <a href="<?php echo BASE_URL; ?>views/settings/" class="dropdown-item">
+                <i class="fas fa-cog"></i> Configurações
+            </a>
 
-        <a href="<?php echo BASE_URL; ?>logout.php" class="icon-btn logout-btn" title="Sair do Sistema">
-            <i class="fas fa-sign-out-alt"></i>
-        </a>
+            <?php if (($currentUser['role'] ?? '') === 'admin'): ?>
+                <a href="<?php echo BASE_URL; ?>views/users/" class="dropdown-item">
+                    <i class="fas fa-users-cog"></i> Usuários
+                </a>
+                <a href="<?php echo BASE_URL; ?>permissions_manager.php" class="dropdown-item">
+                    <i class="fas fa-shield-alt"></i> Permissões
+                </a>
+            <?php endif; ?>
+
+            <a href="<?php echo BASE_URL; ?>logout.php" class="dropdown-item dropdown-logout">
+                <i class="fas fa-sign-out-alt"></i> Sair
+            </a>
+        </div>
     </div>
 </nav>
 
-<style>
-    .user-dropdown-menu {
-        display: none;
-        position: absolute;
-        top: 70px;
-        right: 1.5rem;
-        min-width: 220px;
-        background: #fff;
-        border-radius: 14px;
-        box-shadow: 0 8px 32px rgba(30,40,90,0.18);
-        border: 1px solid #e2e8f0;
-        z-index: 9999;
-        padding: 0.5rem 0;
-        animation: fadeInMenu 0.18s;
-    }
-    @keyframes fadeInMenu {
-        from { opacity: 0; transform: translateY(-10px); }
-        to   { opacity: 1; transform: translateY(0); }
-    }
-    .user-dropdown-menu.open {
-        display: block;
-    }
-    .dropdown-header {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        padding: 0.75rem 1.2rem 0.5rem 1.2rem;
-        border-bottom: 1px solid #f1f5f9;
-        margin-bottom: 0.2rem;
-    }
-    .dropdown-avatar {
-        width: 44px;
-        height: 44px;
-        background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%);
-        color: #fff;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 700;
-        font-size: 1.1rem;
-        box-shadow: 0 2px 8px rgba(79, 70, 229, 0.18);
-    }
-    .dropdown-info {
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
-    }
-    .dropdown-name {
-        font-weight: 700;
-        color: #1e293b;
-        font-size: 1rem;
-    }
-    .dropdown-role {
-        font-size: 0.8rem;
-        color: #64748b;
-        text-transform: uppercase;
-        font-weight: 600;
-    }
-    .dropdown-item {
-        display: flex;
-        align-items: center;
-        gap: 0.7rem;
-        padding: 0.7rem 1.2rem;
-        color: #1e293b;
-        text-decoration: none;
-        font-size: 0.97rem;
-        font-weight: 500;
-        transition: background 0.18s, color 0.18s;
-        border: none;
-        background: none;
-        cursor: pointer;
-    }
-    .dropdown-item i {
-        font-size: 1.1rem;
-        color: #64748b;
-        min-width: 18px;
-        text-align: center;
-    }
-    .dropdown-item:hover {
-        background: #f1f5f9;
-        color: #4f46e5;
-    }
-    .dropdown-item.dropdown-logout {
-        color: #ef4444;
-    }
-    .dropdown-item.dropdown-logout:hover {
-        background: #fee2e2;
-        color: #b91c1c;
-    }
-    .dropdown-divider {
-        height: 1px;
-        background: #f1f5f9;
-        margin: 0.2rem 0 0.2rem 0;
-    }
-</style>
 <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        // Sidebar mobile toggle
-        const toggle = document.getElementById('sidebarToggleMobile');
-        const sidebar = document.getElementById('appSidebar');
-        if(toggle && sidebar) {
-            toggle.addEventListener('click', (e) => {
-                e.stopPropagation();
-                sidebar.classList.toggle('show');
-            });
-            document.addEventListener('click', (e) => {
-                if(window.innerWidth <= 768 && 
-                   sidebar.classList.contains('show') && 
-                   !sidebar.contains(e.target) && 
-                   !toggle.contains(e.target)) {
-                    sidebar.classList.remove('show');
-                }
-            });
-        }
+document.addEventListener('DOMContentLoaded', () => {
+    
+    // 1. Sidebar Toggle (Mobile e Desktop)
+    const sideToggle = document.getElementById('sidebarToggleMobile');
+    const sidebar = document.getElementById('appSidebar'); // ID da Sidebar
+    if(sideToggle && sidebar) {
+        sideToggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            // Alterna entre colapsado e expandido
+            sidebar.classList.toggle('is-collapsed');
+        });
+    }
 
-        // User dropdown menu
-        const userMenuToggle = document.getElementById('userMenuToggle');
-        const userDropdownMenu = document.getElementById('userDropdownMenu');
-        let dropdownOpen = false;
-        if(userMenuToggle && userDropdownMenu) {
-            userMenuToggle.addEventListener('click', (e) => {
-                e.stopPropagation();
-                userDropdownMenu.classList.toggle('open');
-                dropdownOpen = userDropdownMenu.classList.contains('open');
-            });
-            // Fecha ao clicar fora
-            document.addEventListener('click', (e) => {
-                if(dropdownOpen && !userDropdownMenu.contains(e.target) && !userMenuToggle.contains(e.target)) {
-                    userDropdownMenu.classList.remove('open');
-                    dropdownOpen = false;
-                }
-            });
-            // Fecha com ESC
-            document.addEventListener('keydown', (e) => {
-                if(dropdownOpen && e.key === 'Escape') {
-                    userDropdownMenu.classList.remove('open');
-                    dropdownOpen = false;
-                }
-            });
+    // 2. User Menu Dropdown
+    const userToggle = document.getElementById('userMenuToggle');
+    const userMenu = document.getElementById('userDropdownMenu');
+    if(userToggle && userMenu) {
+        userToggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            userMenu.classList.toggle('open');
+            // Fecha o modal de alertas se estiver aberto
+            document.getElementById('alertModal')?.classList.remove('open');
+        });
+    }
+
+    // 3. Alerts Modal
+    const alertBtn = document.getElementById('alertBell');
+    const alertModal = document.getElementById('alertModal');
+    if(alertBtn && alertModal) {
+        alertBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            alertModal.classList.toggle('open');
+            // Fecha o menu de usuário se estiver aberto
+            userMenu?.classList.remove('open');
+        });
+    }
+
+    // 4. Fechar ao clicar fora
+    document.addEventListener('click', (e) => {
+        // Fechar Dropdown Usuario
+        if(userMenu && userMenu.classList.contains('open') && !userMenu.contains(e.target)) {
+            userMenu.classList.remove('open');
+        }
+        // Fechar Modal Alerta
+        if(alertModal && alertModal.classList.contains('open') && !alertModal.contains(e.target)) {
+            alertModal.classList.remove('open');
+        }
+        // Fechar Sidebar Mobile (remover show)
+        if(window.innerWidth <= 768 && sidebar && sidebar.classList.contains('show') && !sidebar.contains(e.target)) {
+            sidebar.classList.remove('show');
         }
     });
+});
 </script>
