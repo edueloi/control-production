@@ -77,6 +77,14 @@ try {
             echo json_encode(['success' => true]);
             break;
             
+        case 'get':
+            $userId = $_SESSION['user_id'];
+            $stmt = $db->prepare("SELECT * FROM clients WHERE user_id = ?");
+            $stmt->execute([$userId]);
+            $clients = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            echo json_encode(['success' => true, 'data' => $clients]);
+            break;
+
         default:
             echo json_encode(['success' => false, 'message' => 'Ação inválida']);
             break;

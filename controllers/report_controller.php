@@ -55,16 +55,17 @@ try {
             $startDate = $_GET['start'] ?? date('Y-m-01');
             $endDate = $_GET['end'] ?? date('Y-m-d');
             
+            $userId = $_SESSION['user_id'];
             $stmt = $db->prepare("
                 SELECT p.*, pr.description as product_name
                 FROM productions p
                 JOIN products pr ON p.product_id = pr.id
-                WHERE DATE(p.created_at) BETWEEN ? AND ?
+                WHERE DATE(p.created_at) BETWEEN ? AND ? AND p.user_id = ?
                 ORDER BY p.created_at DESC
             ");
-            $stmt->execute([$startDate, $endDate]);
+            $stmt->execute([$startDate, $endDate, $userId]);
             $productions = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            
+
             echo json_encode([
                 'success' => true,
                 'data' => $productions

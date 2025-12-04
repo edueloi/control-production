@@ -24,12 +24,20 @@ try {
             $db->beginTransaction();
             
             // Inserir venda
+            $userId = $_SESSION['user_id'];
             $stmt = $db->prepare("
-                INSERT INTO sales (client_id, subtotal, discount, discount_type, total, payment_method)
-                VALUES (?, ?, ?, ?, ?, ?)
+                INSERT INTO sales (user_id, client_id, subtotal, discount, discount_type, total, payment_method)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
             ");
-            $stmt->execute([$clientId, $subtotal, $discount, $discountType, $total, $paymentMethod]);
+            $stmt->execute([$userId, $clientId, $subtotal, $discount, $discountType, $total, $paymentMethod]);
             $saleId = $db->lastInsertId();
+                    case 'get':
+                        $userId = $_SESSION['user_id'];
+                        $stmt = $db->prepare("SELECT * FROM sales WHERE user_id = ?");
+                        $stmt->execute([$userId]);
+                        $sales = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                        echo json_encode(['success' => true, 'data' => $sales]);
+                        break;
             
             // Inserir itens e atualizar estoque
             $stmtItem = $db->prepare("

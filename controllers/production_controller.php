@@ -42,16 +42,19 @@ try {
             $stmt = $db->prepare("SELECT * FROM products WHERE id = ?");
             $stmt->execute([$productId]);
             $product = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($product && $product['user_id'] != $userId) {
+                throw new Exception('Produto não pertence ao usuário logado!');
+            }
             
             $totalCost = 0;
             $insufficientStock = [];
             $ingredientsDetails = [];
             
             foreach ($ingredients as $ing) {
-                $stmt = $db->prepare("SELECT * FROM products WHERE id = ?");
-                $stmt->execute([$ing['product_id']]);
+                $stmt = $db->prepare("SELECT * FROM products WHERE id = ? AND user_id = ?");
+                $stmt->execute([$ing['product_id'], $userId]);
                 $ingProduct = $stmt->fetch(PDO::FETCH_ASSOC);
-                
+
                 if (!$ingProduct) continue;
                 
                 // Nota: Assumindo conversão direta ou que já vem calculado

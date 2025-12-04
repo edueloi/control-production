@@ -121,25 +121,25 @@ try {
             $searchType = $_GET['search_type'] ?? 'all';
             $searchValue = sanitizeInput($_GET['search_value'] ?? '');
             
-            $query = "SELECT * FROM products";
-            $params = [];
-            
+            $query = "SELECT * FROM products WHERE user_id = ?";
+            $params = [$userId];
+
             if ($searchType !== 'all' && !empty($searchValue)) {
                 if ($searchType === 'barcode') {
-                    $query .= " WHERE barcode LIKE ?";
+                    $query .= " AND barcode LIKE ?";
                     $params[] = "%$searchValue%";
                 } elseif ($searchType === 'description') {
-                    $query .= " WHERE description LIKE ?";
+                    $query .= " AND description LIKE ?";
                     $params[] = "%$searchValue%";
                 }
             }
-            
+
             $query .= " ORDER BY created_at DESC";
-            
+
             $stmt = $db->prepare($query);
             $stmt->execute($params);
             $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            
+
             echo json_encode(['success' => true, 'data' => $products]);
             break;
             

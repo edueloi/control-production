@@ -19,22 +19,25 @@ try {
             
             $db->beginTransaction();
             
-            // Atualizar estoque
+            $userId = $_SESSION['user_id'];
+            // Atualizar estoque apenas do produto do usuário
+            $stmt = $db->prepare("UPDATE products SET stock = stock + ? WHERE id = ? AND user_id = ?");
             if ($type === 'entrada') {
-                $stmt = $db->prepare("UPDATE products SET stock = stock + ? WHERE id = ?");
+                $stmt->execute([$quantity, $productId, $userId]);
             } elseif ($type === 'saida') {
-                $stmt = $db->prepare("UPDATE products SET stock = stock - ? WHERE id = ?");
+                $stmt = $db->prepare("UPDATE products SET stock = stock - ? WHERE id = ? AND user_id = ?");
+                $stmt->execute([$quantity, $productId, $userId]);
             } else { // ajuste
-                $stmt = $db->prepare("UPDATE products SET stock = ? WHERE id = ?");
+                $stmt = $db->prepare("UPDATE products SET stock = ? WHERE id = ? AND user_id = ?");
+                $stmt->execute([$quantity, $productId, $userId]);
             }
-            $stmt->execute([$quantity, $productId]);
-            
+
             // Registrar movimentação
             $stmt = $db->prepare("
-                INSERT INTO stock_movements (product_id, type, quantity, notes)
-                VALUES (?, ?, ?, ?)
+                INSERT INTO stock_movements (user_id, product_id, type, quantity, notes)
+                VALUES (?, ?, ?, ?, ?)
             ");
-            $stmt->execute([$productId, $type, $quantity, $notes]);
+            $stmt->execute([$userId, $productId, $type, $quantity, $notes]);
             
             $db->commit();
             

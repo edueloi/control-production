@@ -151,7 +151,7 @@ function getActionColor($action) {
                 </div>
 
                 <?php if ($filterUserId): ?>
-                    <a href="users.php" class="btn-back">
+                        <a href="index.php" class="btn-back">
                         <i class="fas fa-arrow-left"></i> Voltar para Usuários
                     </a>
                 <?php endif; ?>
