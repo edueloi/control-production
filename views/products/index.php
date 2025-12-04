@@ -1,6 +1,6 @@
 <?php
-require_once __DIR__ . '/../config/config.php';
-require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../../config/config.php';
+require_once __DIR__ . '/../../config/database.php';
 
 requireLogin();
 
@@ -11,16 +11,16 @@ $db = Database::getInstance()->getConnection();
 $products = $db->query("SELECT * FROM products ORDER BY created_at DESC")->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
-<?php include __DIR__ . '/../components/header.php'; ?>
+<?php include __DIR__ . '/../../components/header.php'; ?>
 
 <div class="main-layout">
-    <?php include __DIR__ . '/../components/sidebar.php'; ?>
+    <?php include __DIR__ . '/../../components/sidebar.php'; ?>
     
     <div class="content-wrapper">
-        <?php include __DIR__ . '/../components/navbar.php'; ?>
+        <?php include __DIR__ . '/../../components/navbar.php'; ?>
         
         <main class="main-content">
-            <?php include __DIR__ . '/../components/alerts.php'; ?>
+            <?php include __DIR__ . '/../../components/alerts.php'; ?>
             
             <div class="page-header">
                 <h1><i class="fas fa-box"></i> Gestão de Produtos</h1>
@@ -349,4 +349,4 @@ async function buscarProdutos() {
 }
 </script>
 
-<?php include __DIR__ . '/../components/footer.php'; ?>
+<?php include __DIR__ . '/../../components/footer.php'; ?>

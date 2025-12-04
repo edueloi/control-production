@@ -1,6 +1,6 @@
 <?php
-require_once __DIR__ . '/../config/config.php';
-require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../../config/config.php';
+require_once __DIR__ . '/../../config/database.php';
 
 requireLogin();
 
@@ -21,16 +21,16 @@ $productions = $db->query("
 ")->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
-<?php include __DIR__ . '/../components/header.php'; ?>
+<?php include __DIR__ . '/../../components/header.php'; ?>
 
 <div class="main-layout">
-    <?php include __DIR__ . '/../components/sidebar.php'; ?>
+    <?php include __DIR__ . '/../../components/sidebar.php'; ?>
     
     <div class="content-wrapper">
-        <?php include __DIR__ . '/../components/navbar.php'; ?>
+        <?php include __DIR__ . '/../../components/navbar.php'; ?>
         
         <main class="main-content">
-            <?php include __DIR__ . '/../components/alerts.php'; ?>
+            <?php include __DIR__ . '/../../components/alerts.php'; ?>
             
             <div class="page-header">
                 <h1><i class="fas fa-industry"></i> Controle de Produção</h1>
@@ -280,4 +280,4 @@ async function salvarProducao() {
 adicionarIngrediente();
 </script>
 
-<?php include __DIR__ . '/../components/footer.php'; ?>
+<?php include __DIR__ . '/../../components/footer.php'; ?>
