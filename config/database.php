@@ -62,7 +62,8 @@ class Database {
         // Tabela de produtos - COMPLETA
         $this->conn->exec("CREATE TABLE IF NOT EXISTS products (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            barcode TEXT UNIQUE NOT NULL,
+            user_id INTEGER NOT NULL,
+            barcode TEXT NOT NULL,
             description TEXT NOT NULL,
             category TEXT,
             brand TEXT,
@@ -78,12 +79,14 @@ class Database {
             notes TEXT,
             status TEXT DEFAULT 'active',
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id)
         )");
         
         // Tabela de clientes - COMPLETA
         $this->conn->exec("CREATE TABLE IF NOT EXISTS clients (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
             name TEXT NOT NULL,
             type TEXT NOT NULL,
             cpf TEXT,
@@ -100,18 +103,21 @@ class Database {
             credit_limit REAL DEFAULT 0,
             status TEXT DEFAULT 'active',
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id)
         )");
         
         // Tabela de produções
         $this->conn->exec("CREATE TABLE IF NOT EXISTS productions (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
             product_id INTEGER NOT NULL,
             batch_size INTEGER NOT NULL,
             total_cost REAL NOT NULL,
             unit_cost REAL NOT NULL,
             profit_margin REAL,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id),
             FOREIGN KEY (product_id) REFERENCES products(id)
         )");
         
@@ -265,6 +271,11 @@ class Database {
             $this->addColumnIfNotExists('users', 'status', 'TEXT DEFAULT "active"');
             $this->addColumnIfNotExists('users', 'last_login', 'DATETIME');
             
+            // Adicionar user_id nas tabelas (multi-tenancy)
+            $this->addColumnIfNotExists('products', 'user_id', 'INTEGER NOT NULL DEFAULT 1');
+            $this->addColumnIfNotExists('clients', 'user_id', 'INTEGER NOT NULL DEFAULT 1');
+            $this->addColumnIfNotExists('productions', 'user_id', 'INTEGER NOT NULL DEFAULT 1');
+            
             // Adicionar colunas na tabela products
             $this->addColumnIfNotExists('products', 'category', 'TEXT');
             $this->addColumnIfNotExists('products', 'brand', 'TEXT');
@@ -285,6 +296,11 @@ class Database {
             $this->addColumnIfNotExists('sales', 'user_id', 'INTEGER');
             $this->addColumnIfNotExists('sales', 'payment_status', 'TEXT DEFAULT "paid"');
             $this->addColumnIfNotExists('sales', 'notes', 'TEXT');
+            
+            // Criar índices para user_id
+            $this->conn->exec("CREATE INDEX IF NOT EXISTS idx_products_user ON products(user_id)");
+            $this->conn->exec("CREATE INDEX IF NOT EXISTS idx_clients_user ON clients(user_id)");
+            $this->conn->exec("CREATE INDEX IF NOT EXISTS idx_productions_user ON productions(user_id)");
             
         } catch(PDOException $e) {
             // Ignorar erros de colunas já existentes

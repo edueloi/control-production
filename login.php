@@ -33,7 +33,7 @@ $pageTitle = 'Login';
             <div class="form-group">
                 <label for="email">E-mail</label>
                 <div class="input-wrapper">
-                    <i class="fas fa-envelope"></i>
+                    <i class="fas fa-envelope icon-left"></i>
                     <input type="email" id="email" name="email" placeholder="seu@email.com" required autofocus>
                 </div>
             </div>
@@ -41,9 +41,11 @@ $pageTitle = 'Login';
             <div class="form-group">
                 <label for="password">Senha</label>
                 <div class="input-wrapper">
-                    <i class="fas fa-lock"></i>
+                    <i class="fas fa-lock icon-left"></i>
+                    
                     <input type="password" id="password" name="password" placeholder="Sua senha secreta" required>
-                    <i class="fas fa-eye toggle-password" onclick="togglePassword()" style="cursor: pointer; position: absolute; right: 15px; color: #94a3b8;"></i>
+                    
+                    <i class="fas fa-eye toggle-password" onclick="togglePassword()"></i>
                 </div>
             </div>
             
@@ -69,7 +71,7 @@ $pageTitle = 'Login';
 </div>
 
 <style>
-    /* Reset Básico para remover scroll */
+    /* Reset Básico */
     * {
         box-sizing: border-box;
         margin: 0;
@@ -78,7 +80,7 @@ $pageTitle = 'Login';
 
     html, body {
         height: 100%;
-        overflow: hidden; /* O Segredo para não ter scroll */
+        overflow: hidden; /* Sem scroll */
         font-family: 'Poppins', sans-serif;
     }
 
@@ -116,66 +118,56 @@ $pageTitle = 'Login';
         to { transform: translateY(0); opacity: 1; }
     }
 
-    /* Cabeçalho do Cartão */
-    .auth-header {
-        text-align: center;
-        margin-bottom: 30px;
-    }
-
+    /* Cabeçalho */
+    .auth-header { text-align: center; margin-bottom: 30px; }
+    
     .icon-bg {
-        width: 60px;
-        height: 60px;
-        background: #e0e7ff;
-        color: #4f46e5;
+        width: 60px; height: 60px;
+        background: #e0e7ff; color: #4f46e5;
         border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin: 0 auto 15px;
-        font-size: 24px;
+        display: flex; align-items: center; justify-content: center;
+        margin: 0 auto 15px; font-size: 24px;
     }
 
-    .auth-header h1 {
-        font-size: 22px;
-        color: #1e293b;
-        margin-bottom: 8px;
-        font-weight: 600;
-    }
+    .auth-header h1 { font-size: 22px; color: #1e293b; margin-bottom: 8px; font-weight: 600; }
+    .auth-header p { color: #64748b; font-size: 14px; }
 
-    .auth-header p {
-        color: #64748b;
-        font-size: 14px;
-    }
+    /* Inputs e Ícones */
+    .form-group { margin-bottom: 20px; }
+    .form-group label { display: block; color: #334155; font-size: 13px; font-weight: 500; margin-bottom: 8px; }
 
-    /* Formulário e Inputs */
-    .form-group {
-        margin-bottom: 20px;
-    }
+    .input-wrapper { position: relative; }
 
-    .form-group label {
-        display: block;
-        color: #334155;
-        font-size: 13px;
-        font-weight: 500;
-        margin-bottom: 8px;
-    }
-
-    .input-wrapper {
-        position: relative;
-    }
-
+    /* Estilo Geral dos Ícones dentro do input */
     .input-wrapper i {
         position: absolute;
-        left: 15px;
         top: 50%;
         transform: translateY(-50%);
         color: #94a3b8;
         transition: color 0.3s;
+        z-index: 10; /* Garante que o ícone fique acima do input */
     }
 
+    /* Ícone da Esquerda (Email, Cadeado) */
+    .icon-left {
+        left: 15px;
+        pointer-events: none; /* O clique passa através dele */
+    }
+
+    /* Ícone da Direita (Olho) */
+    .toggle-password {
+        right: 15px;
+        cursor: pointer; /* Mãozinha ao passar o mouse */
+        padding: 5px; /* Aumenta a área de clique */
+    }
+
+    .toggle-password:hover { color: #4f46e5; }
+
+    /* Campo de Texto */
     .input-wrapper input {
         width: 100%;
-        padding: 14px 15px 14px 45px; /* Espaço para o ícone */
+        /* Espaço para ícone esquerda (45px) e direita (45px) */
+        padding: 14px 45px 14px 45px; 
         border: 2px solid #e2e8f0;
         border-radius: 12px;
         font-size: 14px;
@@ -190,96 +182,40 @@ $pageTitle = 'Login';
         background: #fff;
         box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
     }
-
-    .input-wrapper input:focus + i {
-        color: #4f46e5;
-    }
+    
+    /* Quando o input tem foco, pinta o ícone da esquerda */
+    .input-wrapper input:focus ~ .icon-left { color: #4f46e5; }
+    /* Nota: O seletor '~' pega o irmão que vem depois, mas como mudamos a ordem no HTML
+       para o input ficar no meio, vamos garantir que a cor funcione via JS ou CSS fixo
+       se necessário. Mas o efeito visual principal é a borda do input. */
+    
+    /* Correção para garantir que o ícone esquerdo mude de cor se estiver DEPOIS no HTML ou usar seletor adjacente */
+    .input-wrapper input:focus + .toggle-password { color: #4f46e5; }
 
     /* Checkbox e Links */
-    .form-actions {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 25px;
-        font-size: 13px;
-    }
-
-    .checkbox-container {
-        display: flex;
-        align-items: center;
-        cursor: pointer;
-        color: #64748b;
-    }
-
-    .checkbox-container input {
-        margin-right: 8px;
-        accent-color: #4f46e5;
-        width: 16px;
-        height: 16px;
-    }
-
-    .forgot-link {
-        color: #4f46e5;
-        text-decoration: none;
-        font-weight: 500;
-    }
-
-    .forgot-link:hover {
-        text-decoration: underline;
-    }
+    .form-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; font-size: 13px; }
+    
+    .checkbox-container { display: flex; align-items: center; cursor: pointer; color: #64748b; }
+    .checkbox-container input { margin-right: 8px; accent-color: #4f46e5; width: 16px; height: 16px; }
+    
+    .forgot-link { color: #4f46e5; text-decoration: none; font-weight: 500; }
+    .forgot-link:hover { text-decoration: underline; }
 
     /* Botão */
     .btn-login {
-        width: 100%;
-        padding: 14px;
+        width: 100%; padding: 14px;
         background: linear-gradient(to right, #4f46e5, #4338ca);
-        color: white;
-        border: none;
-        border-radius: 12px;
-        font-size: 15px;
-        font-weight: 600;
-        cursor: pointer;
+        color: white; border: none; border-radius: 12px;
+        font-size: 15px; font-weight: 600; cursor: pointer;
         transition: transform 0.2s, box-shadow 0.2s;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 10px;
+        display: flex; align-items: center; justify-content: center; gap: 10px;
     }
+    .btn-login:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(79, 70, 229, 0.3); }
+    .btn-login:active { transform: translateY(0); }
 
-    .btn-login:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 20px rgba(79, 70, 229, 0.3);
-    }
-
-    .btn-login:active {
-        transform: translateY(0);
-    }
-
-    /* Rodapé */
-    .auth-footer {
-        margin-top: 25px;
-        text-align: center;
-        font-size: 13px;
-        color: #64748b;
-    }
-
-    .auth-footer a {
-        color: #4f46e5;
-        font-weight: 600;
-        text-decoration: none;
-    }
-    
-    .input-wrapper {
-        position: relative;
-    }
-    
-    .toggle-password {
-        transition: color 0.3s;
-    }
-    
-    .toggle-password:hover {
-        color: #1e40af !important;
-    }
+    /* Footer */
+    .auth-footer { margin-top: 25px; text-align: center; font-size: 13px; color: #64748b; }
+    .auth-footer a { color: #4f46e5; font-weight: 600; text-decoration: none; }
 </style>
 
 <script>
@@ -287,6 +223,7 @@ function togglePassword() {
     const passwordInput = document.getElementById('password');
     const toggleIcon = document.querySelector('.toggle-password');
     
+    // Alternar entre password e text
     if (passwordInput.type === 'password') {
         passwordInput.type = 'text';
         toggleIcon.classList.remove('fa-eye');

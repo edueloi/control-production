@@ -11,6 +11,9 @@ ini_set('session.cookie_httponly', 1);
 ini_set('session.use_only_cookies', 1);
 session_start();
 
+// Incluir funções de multi-tenancy
+require_once __DIR__ . '/../includes/multi_tenancy.php';
+
 // Timezone
 date_default_timezone_set('America/Sao_Paulo');
 
