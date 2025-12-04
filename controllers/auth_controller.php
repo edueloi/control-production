@@ -36,6 +36,7 @@ try {
                 $_SESSION['user_name'] = $user['name'];
                 $_SESSION['user_email'] = $user['email'];
                 $_SESSION['user_role'] = $user['role'] ?? 'user';
+                $_SESSION['user_database'] = $user['database_name'] ?? null;
                 
                 // Atualizar last_login
                 $stmt = $db->prepare("UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?");
@@ -98,8 +99,10 @@ try {
             $count = $db->query("SELECT COUNT(*) FROM users")->fetchColumn();
             $role = ($count == 0) ? 'admin' : 'user';
             
-            $stmt = $db->prepare("INSERT INTO users (name, email, password, role, status) VALUES (?, ?, ?, ?, 'active')");
-            $stmt->execute([$name, $email, $hashedPassword, $role]);
+            // Gerar nome do banco para o usuário
+            $databaseName = 'userdb_' . strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $email));
+            $stmt = $db->prepare("INSERT INTO users (name, email, password, role, status, database_name) VALUES (?, ?, ?, ?, 'active', ?)");
+            $stmt->execute([$name, $email, $hashedPassword, $role, $databaseName]);
             
             setSuccessMessage('Cadastro realizado com sucesso! Faça login para continuar.');
             header('Location: ' . BASE_URL . 'login.php');

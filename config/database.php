@@ -2,36 +2,43 @@
 class Database {
     private static $instance = null;
     private $conn;
-    private $dbFile = __DIR__ . '/../database/production.db';
-    
+    private $dbFile;
+
     private function __construct() {
         try {
+            // Definir nome do banco do usuário logado
+            $dbName = 'production.db';
+            if (isset($_SESSION['user_database']) && !empty($_SESSION['user_database'])) {
+                $dbName = $_SESSION['user_database'] . '.db';
+            }
+            $this->dbFile = __DIR__ . '/../database/' . $dbName;
+
             // Criar diretório database se não existir
             $dbDir = dirname($this->dbFile);
             if (!file_exists($dbDir)) {
                 mkdir($dbDir, 0777, true);
             }
-            
+
             // Conectar ao SQLite
             $this->conn = new PDO("sqlite:" . $this->dbFile);
             $this->conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-            
+
             // Criar tabelas
             $this->createTables();
-            
+
             // Executar migrações para adicionar novas colunas
             $this->runMigrations();
-            
+
             // Criar índices após migrações
             $this->createIndexes();
-            
+
             // Criar admin padrão se não existir usuários
             $this->createDefaultAdmin();
         } catch(PDOException $e) {
             die("Erro na conexão: " . $e->getMessage());
         }
     }
-    
+
     public static function getInstance() {
         if (self::$instance == null) {
             self::$instance = new Database();

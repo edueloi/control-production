@@ -339,7 +339,7 @@ if ($db) {
                 <a href="<?php echo BASE_URL; ?>views/users/" class="dropdown-item">
                     <i class="fas fa-users-cog"></i> Usuários
                 </a>
-                <a href="<?php echo BASE_URL; ?>permissions_manager.php" class="dropdown-item">
+                <a href="<?php echo BASE_URL; ?>views/permissions/index.php" class="dropdown-item">
                     <i class="fas fa-shield-alt"></i> Permissões
                 </a>
             <?php endif; ?>
