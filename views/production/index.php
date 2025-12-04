@@ -153,43 +153,81 @@ $productions = $db->query("
 </div>
 
 <script>
-const products = <?php echo json_encode($products); ?>;
+const allProducts = <?php echo json_encode($products); ?>;
+// Filtrar apenas insumos e produtos intermediários para ingredientes
+const ingredientProducts = allProducts.filter(p => p.type === 'supply' || p.type === 'intermediate');
 let ingredientCount = 0;
 let calculatedData = null;
 
 function adicionarIngrediente() {
+    console.log('Adicionando ingrediente...'); // Debug
     ingredientCount++;
     const container = document.getElementById('ingredientsContainer');
+    
+    if (!container) {
+        console.error('Container não encontrado!');
+        return;
+    }
+    
     const div = document.createElement('div');
     div.className = 'ingredient-row';
     div.id = `ingredient-${ingredientCount}`;
-    div.style.cssText = 'display: flex; gap: 15px; margin-bottom: 15px; padding: 15px; background: #f8f9fa; border-radius: 8px; align-items: flex-end;';
+    div.style.cssText = 'display: flex; gap: 15px; margin-bottom: 15px; padding: 15px; background: #f8f9fa; border-radius: 8px; align-items: flex-end; border-left: 4px solid #3b82f6;';
+    
+    let optionsHtml = '<option value="">Selecione um ingrediente</option>';
+    ingredientProducts.forEach(p => {
+        optionsHtml += `<option value="${p.id}" data-cost="${p.cost}" data-unit="${p.unit}" data-stock="${p.stock}">
+            ${p.description} (Estoque: ${p.stock} ${p.unit.toUpperCase()})
+        </option>`;
+    });
     
     div.innerHTML = `
         <div class="form-group" style="flex: 2; margin-bottom: 0;">
-            <label>Ingrediente</label>
+            <label><i class="fas fa-box"></i> Ingrediente *</label>
             <select name="ingredients[]" class="ingredient-select" required>
-                <option value="">Selecione</option>
-                ${products.map(p => `<option value="${p.id}" data-cost="${p.cost}" data-unit="${p.unit}">${p.description} (${p.cost.toFixed(2)} - ${p.unit.toUpperCase()})</option>`).join('')}
+                ${optionsHtml}
             </select>
         </div>
         <div class="form-group" style="flex: 1; margin-bottom: 0;">
-            <label>Quantidade</label>
-            <input type="number" name="quantities[]" step="0.01" min="0.01" required>
+            <label><i class="fas fa-weight"></i> Quantidade *</label>
+            <input type="number" name="quantities[]" step="0.01" min="0.01" placeholder="0.00" required>
         </div>
-        <button type="button" class="btn btn-danger btn-sm" onclick="removerIngrediente(${ingredientCount})" style="margin-bottom: 0;">
+        <div class="form-group" style="flex: 0.8; margin-bottom: 0;">
+            <label><i class="fas fa-balance-scale"></i> Unidade</label>
+            <input type="text" class="unit-display" readonly value="-" style="text-align: center; font-weight: bold;">
+        </div>
+        <button type="button" class="btn btn-danger btn-sm" onclick="removerIngrediente(${ingredientCount})" style="margin-bottom: 0;" title="Remover ingrediente">
             <i class="fas fa-trash"></i>
         </button>
     `;
     
     container.appendChild(div);
+    
+    // Atualizar unidade quando selecionar ingrediente
+    const select = div.querySelector('.ingredient-select');
+    const unitDisplay = div.querySelector('.unit-display');
+    select.addEventListener('change', function() {
+        const option = this.options[this.selectedIndex];
+        if (option.value) {
+            unitDisplay.value = option.dataset.unit.toUpperCase();
+        } else {
+            unitDisplay.value = '-';
+        }
+    });
+    
+    console.log('Ingrediente adicionado com sucesso!');
 }
 
 function removerIngrediente(id) {
-    document.getElementById(`ingredient-${id}`).remove();
+    const element = document.getElementById(`ingredient-${id}`);
+    if (element) {
+        element.remove();
+        console.log('Ingrediente removido:', id);
+    }
 }
 
 function calcularProducao() {
+    console.log('Calculando produção...');
     const productId = document.getElementById('finished_product').value;
     const batchSize = parseInt(document.getElementById('batch_size').value);
     
@@ -276,8 +314,19 @@ async function salvarProducao() {
     }
 }
 
-// Adicionar primeiro ingrediente automaticamente
-adicionarIngrediente();
+// Adicionar primeiro ingrediente quando o DOM estiver pronto
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM carregado, adicionando primeiro ingrediente...');
+    adicionarIngrediente();
+});
+
+// Também chamar imediatamente caso o script rode depois do DOM
+if (document.readyState === 'loading') {
+    console.log('Aguardando DOM...');
+} else {
+    console.log('DOM já pronto, adicionando ingrediente agora...');
+    adicionarIngrediente();
+}
 </script>
 
 <?php include __DIR__ . '/../../components/footer.php'; ?>

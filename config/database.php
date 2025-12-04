@@ -63,7 +63,7 @@ class Database {
         $this->conn->exec("CREATE TABLE IF NOT EXISTS products (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER NOT NULL,
-            barcode TEXT NOT NULL,
+            barcode TEXT,
             description TEXT NOT NULL,
             category TEXT,
             brand TEXT,
@@ -214,7 +214,7 @@ class Database {
         // Tabela de logs de atividades
         $this->conn->exec("CREATE TABLE IF NOT EXISTS activity_logs (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER,
+            user_id INTEGER NOT NULL,
             action TEXT NOT NULL,
             entity_type TEXT,
             entity_id INTEGER,
@@ -222,6 +222,20 @@ class Database {
             ip_address TEXT,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES users(id)
+        )");
+        
+        // Tabela de receitas (templates de produção)
+        $this->conn->exec("CREATE TABLE IF NOT EXISTS recipes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            name TEXT NOT NULL,
+            product_id INTEGER NOT NULL,
+            ingredients TEXT NOT NULL,
+            description TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id),
+            FOREIGN KEY (product_id) REFERENCES products(id)
         )");
         
     }
