@@ -204,21 +204,29 @@ const Modal = {
 document.addEventListener('DOMContentLoaded', function() {
     const sidebarToggle = document.getElementById('sidebarToggle');
     const sidebar = document.querySelector('.sidebar');
+    const body = document.body;
     
-    // Verificar se existe estado salvo
-    const sidebarState = localStorage.getItem('sidebarCollapsed');
-    if (sidebarState === 'true') {
-        sidebar.classList.add('collapsed');
-    }
-    
-    if (sidebarToggle) {
-        sidebarToggle.addEventListener('click', function() {
-            sidebar.classList.toggle('collapsed');
-            
-            // Salvar estado
-            const isCollapsed = sidebar.classList.contains('collapsed');
-            localStorage.setItem('sidebarCollapsed', isCollapsed);
-        });
+    // Adicionar classe ao body
+    if (sidebar) {
+        body.classList.add('has-sidebar');
+        
+        // Verificar se existe estado salvo
+        const sidebarState = localStorage.getItem('sidebarCollapsed');
+        if (sidebarState === 'true') {
+            sidebar.classList.add('is-collapsed');
+            body.classList.add('sidebar-collapsed');
+        }
+        
+        if (sidebarToggle) {
+            sidebarToggle.addEventListener('click', function() {
+                sidebar.classList.toggle('is-collapsed');
+                body.classList.toggle('sidebar-collapsed');
+                
+                // Salvar estado
+                const isCollapsed = sidebar.classList.contains('is-collapsed');
+                localStorage.setItem('sidebarCollapsed', isCollapsed);
+            });
+        }
     }
 });
 
