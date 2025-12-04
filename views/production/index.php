@@ -19,6 +19,10 @@ $productions = $db->query("
     ORDER BY p.created_at DESC 
     LIMIT 20
 ")->fetchAll(PDO::FETCH_ASSOC);
+require_once __DIR__ . '/../../includes/multi_tenancy.php';
+$queryProductions = "SELECT p.*, pr.description as product_name FROM productions p JOIN products pr ON p.product_id = pr.id ORDER BY p.created_at DESC LIMIT 20";
+$queryProductions = addUserFilterToQuery($queryProductions, 'p');
+$productions = $db->query($queryProductions)->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <?php include __DIR__ . '/../../components/header.php'; ?>

