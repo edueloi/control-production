@@ -74,6 +74,13 @@ $requestUri  = $_SERVER['REQUEST_URI'];
 
         <span class="menu-category">Sistema</span>
 
+        <?php
+        // Carregar permissões do sistema
+        $allPermissions = require __DIR__ . '/../config/permissions.php';
+        $userRole = $_SESSION['user_role'] ?? 'user';
+        $userPerms = $allPermissions[$userRole] ?? [];
+        ?>
+
         <?php if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'admin'): ?>
             <a href="<?php echo BASE_URL; ?>views/users/"
                class="menu-item <?php echo isActive($requestUri, '/users/'); ?>">
@@ -82,11 +89,13 @@ $requestUri  = $_SERVER['REQUEST_URI'];
             </a>
         <?php endif; ?>
 
-        <a href="<?php echo BASE_URL; ?>views/permissions/"
-           class="menu-item <?php echo isActive($requestUri, '/permissions/'); ?>">
-            <i class="fas fa-user-shield"></i>
-            <span class="menu-text">Permissões</span>
-        </a>
+        <?php if (!empty($userPerms['manage_permissions'])): ?>
+            <a href="<?php echo BASE_URL; ?>views/permissions/"
+               class="menu-item <?php echo isActive($requestUri, '/permissions/'); ?>">
+                <i class="fas fa-user-shield"></i>
+                <span class="menu-text">Permissões</span>
+            </a>
+        <?php endif; ?>
 
         <a href="<?php echo BASE_URL; ?>views/profile/"
            class="menu-item <?php echo isActive($requestUri, '/profile/'); ?>">
