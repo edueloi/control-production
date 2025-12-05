@@ -7,7 +7,7 @@ if (!isLoggedIn()) {
     exit;
 }
 
-echo "<!DOCTYPE html><html><head><meta charset='UTF-8'><title>Debug Produção</title>";
+echo "<!DOCTYPE html><html><head><meta charset='UTF-8'><title>Debug Produção</title><link rel='icon' type='image/png' href='images/icon-seictech.png'>";
 echo "<style>
 body { font-family: monospace; padding: 20px; background: #1e1e1e; color: #d4d4d4; }
 .success { background: #0e6c30; padding: 10px; margin: 10px 0; border-radius: 4px; }

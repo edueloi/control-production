@@ -21,6 +21,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
+    <link rel="icon" type="image/png" href="images/icon-seictech.png">
     <meta charset="UTF-8">
     <title>Gerenciar Permissões</title>
     <style>

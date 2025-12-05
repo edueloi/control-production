@@ -1,7 +1,7 @@
 <?php
 require_once 'config/database.php';
 
-echo "<!DOCTYPE html><html><head><meta charset='UTF-8'><title>Setup Sistema</title>";
+echo "<!DOCTYPE html><html><head><meta charset='UTF-8'><title>Setup Sistema</title><link rel='icon' type='image/png' href='images/icon-seictech.png'>";
 echo "<style>
 body { font-family: Arial; max-width: 1000px; margin: 40px auto; padding: 20px; background: #f5f5f5; }
 .success { background: #d4edda; padding: 15px; border-radius: 5px; margin: 10px 0; border-left: 4px solid #28a745; }
