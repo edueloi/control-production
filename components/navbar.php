@@ -2,9 +2,14 @@
 $currentUser = getCurrentUser();
 ?>
 <nav class="navbar">
-    <div class="navbar-brand">
-        <i class="fas fa-industry"></i>
-        <span><?php echo APP_NAME; ?></span>
+    <div class="navbar-left" style="display: flex; align-items: center; gap: 15px;">
+        <button id="mobileMenuBtn" class="btn-icon mobile-only">
+            <i class="fas fa-bars"></i>
+        </button>
+        <div class="navbar-brand">
+            <i class="fas fa-industry"></i>
+            <span><?php echo APP_NAME; ?></span>
+        </div>
     </div>
     <div class="navbar-user">
         <div class="user-info">
