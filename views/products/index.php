@@ -7,8 +7,9 @@ requireLogin();
 $pageTitle = 'Produtos';
 $db = Database::getInstance()->getConnection();
 
-// Buscar todos os produtos
-$products = $db->query("SELECT * FROM products ORDER BY created_at DESC")->fetchAll(PDO::FETCH_ASSOC);
+// Buscar todos os produtos do usuário
+$userFilter = getUserFilter();
+$products = $db->query("SELECT * FROM products WHERE $userFilter ORDER BY created_at DESC")->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <?php include __DIR__ . '/../../components/header.php'; ?>

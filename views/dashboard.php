@@ -6,21 +6,27 @@ requireLogin();
 
 $pageTitle = 'Dashboard';
 $db = Database::getInstance()->getConnection();
+$userFilter = getUserFilter();
 
 // Estatísticas
-$totalProducts = $db->query("SELECT COUNT(*) FROM products")->fetchColumn();
-$totalClients = $db->query("SELECT COUNT(*) FROM clients")->fetchColumn();
-$totalSales = $db->query("SELECT COUNT(*) FROM sales WHERE DATE(created_at) = DATE('now')")->fetchColumn();
-$todaySalesAmount = $db->query("SELECT COALESCE(SUM(total), 0) FROM sales WHERE DATE(created_at) = DATE('now')")->fetchColumn();
+$totalProducts = $db->query("SELECT COUNT(*) FROM products WHERE $userFilter")->fetchColumn();
+$totalClients = $db->query("SELECT COUNT(*) FROM clients WHERE $userFilter")->fetchColumn();
+
+// Para vendas, precisamos ser mais específicos com o alias
+$salesFilter = getUserFilter('s');
+$totalSales = $db->query("SELECT COUNT(*) FROM sales s WHERE DATE(s.created_at) = DATE('now') AND $salesFilter")->fetchColumn();
+$todaySalesAmount = $db->query("SELECT COALESCE(SUM(s.total), 0) FROM sales s WHERE DATE(s.created_at) = DATE('now') AND $salesFilter")->fetchColumn();
 
 // Produtos com estoque baixo
-$lowStockProducts = $db->query("SELECT * FROM products WHERE stock <= min_stock AND min_stock > 0 ORDER BY stock ASC LIMIT 5")->fetchAll(PDO::FETCH_ASSOC);
+$lowStockProducts = $db->query("SELECT * FROM products WHERE stock <= min_stock AND min_stock > 0 AND $userFilter ORDER BY stock ASC LIMIT 5")->fetchAll(PDO::FETCH_ASSOC);
 
 // Últimas vendas
+$clientFilter = getUserFilter('c');
 $recentSales = $db->query("
     SELECT s.*, c.name as client_name 
     FROM sales s 
-    LEFT JOIN clients c ON s.client_id = c.id 
+    LEFT JOIN clients c ON s.client_id = c.id AND $clientFilter
+    WHERE $salesFilter
     ORDER BY s.created_at DESC 
     LIMIT 10
 ")->fetchAll(PDO::FETCH_ASSOC);

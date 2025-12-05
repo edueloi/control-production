@@ -7,8 +7,9 @@ requireLogin();
 $pageTitle = 'Clientes';
 $db = Database::getInstance()->getConnection();
 
-// Buscar todos os clientes
-$clients = $db->query("SELECT * FROM clients ORDER BY created_at DESC")->fetchAll(PDO::FETCH_ASSOC);
+// Buscar todos os clientes do usuário
+$userFilter = getUserFilter();
+$clients = $db->query("SELECT * FROM clients WHERE $userFilter ORDER BY created_at DESC")->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <?php include __DIR__ . '/../../components/header.php'; ?>

@@ -15,7 +15,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 // Incluir funções de multi-tenancy se necessário
-// require_once __DIR__ . '/../includes/multi_tenancy.php'; // Descomente se esse arquivo existir
+require_once __DIR__ . '/../includes/multi_tenancy.php'; // Descomente se esse arquivo existir
 
 // Timezone
 date_default_timezone_set('America/Sao_Paulo');

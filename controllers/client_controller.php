@@ -34,10 +34,10 @@ try {
             }
             
             $stmt = $db->prepare("
-                INSERT INTO clients (name, type, cpf, cnpj, company_name, email, phone, whatsapp, address)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO clients (user_id, name, type, cpf, cnpj, company_name, email, phone, whatsapp, address)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ");
-            $stmt->execute([$name, $type, $cpf, $cnpj, $companyName, $email, $phone, $whatsapp, $address]);
+            $stmt->execute([getCurrentUserId(), $name, $type, $cpf, $cnpj, $companyName, $email, $phone, $whatsapp, $address]);
             
             setSuccessMessage('Cliente cadastrado com sucesso!');
             echo json_encode(['success' => true]);
@@ -45,6 +45,12 @@ try {
             
         case 'update':
             $id = intval($_POST['id']);
+
+            if (!checkOwnership($db, 'clients', $id)) {
+                echo json_encode(['success' => false, 'message' => 'Permissão negada.']);
+                exit;
+            }
+
             $name = sanitizeInput($_POST['name']);
             $type = sanitizeInput($_POST['type']);
             $cpf = $type === 'physical' ? sanitizeInput($_POST['cpf'] ?? '') : null;
@@ -59,9 +65,9 @@ try {
                 UPDATE clients 
                 SET name = ?, type = ?, cpf = ?, cnpj = ?, company_name = ?, 
                     email = ?, phone = ?, whatsapp = ?, address = ?, updated_at = CURRENT_TIMESTAMP
-                WHERE id = ?
+                WHERE id = ? AND user_id = ?
             ");
-            $stmt->execute([$name, $type, $cpf, $cnpj, $companyName, $email, $phone, $whatsapp, $address, $id]);
+            $stmt->execute([$name, $type, $cpf, $cnpj, $companyName, $email, $phone, $whatsapp, $address, $id, getCurrentUserId()]);
             
             setSuccessMessage('Cliente atualizado com sucesso!');
             echo json_encode(['success' => true]);
@@ -70,17 +76,22 @@ try {
         case 'delete':
             $id = intval($_POST['id']);
             
-            $stmt = $db->prepare("DELETE FROM clients WHERE id = ?");
-            $stmt->execute([$id]);
+            if (!checkOwnership($db, 'clients', $id)) {
+                echo json_encode(['success' => false, 'message' => 'Permissão negada.']);
+                exit;
+            }
+
+            $stmt = $db->prepare("DELETE FROM clients WHERE id = ? AND user_id = ?");
+            $stmt->execute([$id, getCurrentUserId()]);
             
             setSuccessMessage('Cliente excluído com sucesso!');
             echo json_encode(['success' => true]);
             break;
             
         case 'get':
-            $userId = $_SESSION['user_id'];
-            $stmt = $db->prepare("SELECT * FROM clients WHERE user_id = ?");
-            $stmt->execute([$userId]);
+            $filter = getUserFilter();
+            $stmt = $db->prepare("SELECT * FROM clients WHERE {$filter}");
+            $stmt->execute();
             $clients = $stmt->fetchAll(PDO::FETCH_ASSOC);
             echo json_encode(['success' => true, 'data' => $clients]);
             break;

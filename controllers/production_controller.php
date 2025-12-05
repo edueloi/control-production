@@ -122,6 +122,9 @@ try {
             }
             
             // Validações
+            if (!$userId) {
+                throw new Exception('Sessão inválida ou usuário não encontrado!');
+            }
             if (!$productId || !$batchSize || empty($ingredients)) {
                 throw new Exception('Dados incompletos: produto, lote ou ingredientes faltando!');
             }
@@ -133,23 +136,21 @@ try {
                 INSERT INTO productions (user_id, product_id, batch_size, total_cost, unit_cost, profit_margin)
                 VALUES (?, ?, ?, ?, ?, ?)
             ");
-            // Se userId for null (sessão perdida), usa 1 como fallback ou lança erro
-            $userIdToUse = $userId ?: 1; 
-            $stmt->execute([$userIdToUse, $productId, $batchSize, $totalCost, $unitCost, $profitMargin]);
+            $stmt->execute([$userId, $productId, $batchSize, $totalCost, $unitCost, $profitMargin]);
             $productionId = $db->lastInsertId();
             
             // 2. Inserir ingredientes e Movimentar Estoque (Saída)
             $stmtInsertIng = $db->prepare("
-                INSERT INTO production_ingredients (production_id, product_id, quantity, cost)
-                VALUES (?, ?, ?, ?)
+                INSERT INTO production_ingredients (production_id, user_id, product_id, quantity, cost)
+                VALUES (?, ?, ?, ?, ?)
             ");
             
-            $stmtStockOut = $db->prepare("UPDATE products SET stock = stock - ? WHERE id = ?");
+            $stmtStockOut = $db->prepare("UPDATE products SET stock = stock - ? WHERE id = ? AND user_id = ?");
             
             // CORREÇÃO: Usar 'notes' e 'reference_type'
             $stmtMovOut = $db->prepare("
-                INSERT INTO stock_movements (product_id, type, quantity, reference_id, reference_type, notes)
-                VALUES (?, 'saida', ?, ?, 'production', 'Ingrediente p/ Produção')
+                INSERT INTO stock_movements (user_id, product_id, type, quantity, reference_id, reference_type, notes)
+                VALUES (?, ?, 'saida', ?, ?, 'production', 'Ingrediente p/ Produção')
             ");
             
             foreach ($ingredients as $ingredient) {
@@ -163,25 +164,25 @@ try {
                 }
                 
                 // Salva ingrediente
-                $stmtInsertIng->execute([$productionId, $ingId, $ingQty, $ingCost]);
+                $stmtInsertIng->execute([$productionId, $userId, $ingId, $ingQty, $ingCost]);
                 
                 // Baixa no estoque
-                $stmtStockOut->execute([$ingQty, $ingId]);
+                $stmtStockOut->execute([$ingQty, $ingId, $userId]);
                 
                 // Registo de movimento (CORRIGIDO)
-                $stmtMovOut->execute([$ingId, $ingQty, $productionId]);
+                $stmtMovOut->execute([$userId, $ingId, $ingQty, $productionId]);
             }
             
             // 3. Adicionar produto acabado ao estoque (Entrada)
-            $stmtStockIn = $db->prepare("UPDATE products SET stock = stock + ? WHERE id = ?");
-            $stmtStockIn->execute([$batchSize, $productId]);
+            $stmtStockIn = $db->prepare("UPDATE products SET stock = stock + ? WHERE id = ? AND user_id = ?");
+            $stmtStockIn->execute([$batchSize, $productId, $userId]);
             
             // Registo de movimento (CORRIGIDO)
             $stmtMovIn = $db->prepare("
-                INSERT INTO stock_movements (product_id, type, quantity, reference_id, reference_type, notes)
-                VALUES (?, 'entrada', ?, ?, 'production', 'Produção Concluída')
+                INSERT INTO stock_movements (user_id, product_id, type, quantity, reference_id, reference_type, notes)
+                VALUES (?, ?, 'entrada', ?, ?, 'production', 'Produção Concluída')
             ");
-            $stmtMovIn->execute([$productId, $batchSize, $productionId]);
+            $stmtMovIn->execute([$userId, $productId, $batchSize, $productionId]);
             
             // Log de atividade (se a função existir)
             if (function_exists('logActivity')) {

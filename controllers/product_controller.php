@@ -39,10 +39,10 @@ try {
             }
             
             $stmt = $db->prepare("
-                INSERT INTO products (barcode, description, cost, price, stock, min_stock, unit, type, image)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO products (user_id, barcode, description, cost, price, stock, min_stock, unit, type, image)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ");
-            $stmt->execute([$barcode, $description, $cost, $price, $stock, $minStock, $unit, $type, $imagePath]);
+            $stmt->execute([getCurrentUserId(), $barcode, $description, $cost, $price, $stock, $minStock, $unit, $type, $imagePath]);
             
             setSuccessMessage('Produto cadastrado com sucesso!');
             echo json_encode(['success' => true]);
@@ -50,6 +50,12 @@ try {
             
         case 'update':
             $id = intval($_POST['id']);
+            
+            if (!checkOwnership($db, 'products', $id)) {
+                echo json_encode(['success' => false, 'message' => 'Permissão negada.']);
+                exit;
+            }
+
             $barcode = sanitizeInput($_POST['barcode']);
             $description = sanitizeInput($_POST['description']);
             $cost = floatval($_POST['cost']);
@@ -60,8 +66,8 @@ try {
             $type = sanitizeInput($_POST['type']);
             
             // Buscar imagem atual
-            $stmt = $db->prepare("SELECT image FROM products WHERE id = ?");
-            $stmt->execute([$id]);
+            $stmt = $db->prepare("SELECT image FROM products WHERE id = ? AND user_id = ?");
+            $stmt->execute([$id, getCurrentUserId()]);
             $currentProduct = $stmt->fetch(PDO::FETCH_ASSOC);
             $imagePath = $currentProduct['image'];
             
@@ -90,9 +96,9 @@ try {
                 UPDATE products 
                 SET barcode = ?, description = ?, cost = ?, price = ?, stock = ?, 
                     min_stock = ?, unit = ?, type = ?, image = ?, updated_at = CURRENT_TIMESTAMP
-                WHERE id = ?
+                WHERE id = ? AND user_id = ?
             ");
-            $stmt->execute([$barcode, $description, $cost, $price, $stock, $minStock, $unit, $type, $imagePath, $id]);
+            $stmt->execute([$barcode, $description, $cost, $price, $stock, $minStock, $unit, $type, $imagePath, $id, getCurrentUserId()]);
             
             setSuccessMessage('Produto atualizado com sucesso!');
             echo json_encode(['success' => true]);
@@ -101,17 +107,22 @@ try {
         case 'delete':
             $id = intval($_POST['id']);
             
+            if (!checkOwnership($db, 'products', $id)) {
+                echo json_encode(['success' => false, 'message' => 'Permissão negada.']);
+                exit;
+            }
+
             // Buscar e deletar imagem
-            $stmt = $db->prepare("SELECT image FROM products WHERE id = ?");
-            $stmt->execute([$id]);
+            $stmt = $db->prepare("SELECT image FROM products WHERE id = ? AND user_id = ?");
+            $stmt->execute([$id, getCurrentUserId()]);
             $product = $stmt->fetch(PDO::FETCH_ASSOC);
             
-            if ($product['image'] && file_exists(__DIR__ . '/../' . $product['image'])) {
+            if ($product && $product['image'] && file_exists(__DIR__ . '/../' . $product['image'])) {
                 unlink(__DIR__ . '/../' . $product['image']);
             }
             
-            $stmt = $db->prepare("DELETE FROM products WHERE id = ?");
-            $stmt->execute([$id]);
+            $stmt = $db->prepare("DELETE FROM products WHERE id = ? AND user_id = ?");
+            $stmt->execute([$id, getCurrentUserId()]);
             
             setSuccessMessage('Produto excluído com sucesso!');
             echo json_encode(['success' => true]);
@@ -121,8 +132,9 @@ try {
             $searchType = $_GET['search_type'] ?? 'all';
             $searchValue = sanitizeInput($_GET['search_value'] ?? '');
             
-            $query = "SELECT * FROM products WHERE user_id = ?";
-            $params = [$userId];
+            $filter = getUserFilter();
+            $query = "SELECT * FROM products WHERE {$filter}";
+            $params = [];
 
             if ($searchType !== 'all' && !empty($searchValue)) {
                 if ($searchType === 'barcode') {
@@ -145,6 +157,12 @@ try {
             
         case 'get':
             $id = intval($_GET['id']);
+            
+            if (!checkOwnership($db, 'products', $id)) {
+                echo json_encode(['success' => false, 'message' => 'Permissão negada.']);
+                exit;
+            }
+
             $stmt = $db->prepare("SELECT * FROM products WHERE id = ?");
             $stmt->execute([$id]);
             $product = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -155,6 +173,13 @@ try {
         default:
             echo json_encode(['success' => false, 'message' => 'Ação inválida']);
             break;
+    }
+} catch (PDOException $e) {
+    // Check for unique constraint violation
+    if ($e->getCode() == '23000' && strpos($e->getMessage(), 'UNIQUE constraint failed: products.barcode') !== false) {
+        echo json_encode(['success' => false, 'message' => 'Este código de barras já está em uso. Por favor, utilize outro.']);
+    } else {
+        echo json_encode(['success' => false, 'message' => 'Erro no banco de dados: ' . $e->getMessage()]);
     }
 } catch (Exception $e) {
     echo json_encode(['success' => false, 'message' => $e->getMessage()]);
