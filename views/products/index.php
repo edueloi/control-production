@@ -121,10 +121,20 @@ $products = $db->query("SELECT * FROM products WHERE $userFilter ORDER BY create
                             <i class="fas fa-image"></i>
                             Imagem do Produto (opcional)
                         </label>
-                        <input type="file" id="image" name="image" accept="image/*">
-                        <div id="imagePreview" style="margin-top: 10px; display: none;">
-                            <img id="previewImg" style="max-width: 150px; border-radius: 8px; border: 2px solid #e2e8f0;">
+                        <div id="image-uploader" class="image-uploader">
+                            <div class="uploader-instructions">
+                                <i class="fas fa-upload"></i>
+                                <p>Arraste e solte uma imagem aqui, cole, ou clique para selecionar.</p>
+                            </div>
+                            <div class="image-preview" style="display: none;">
+                                <img id="preview-img" src="#">
+                                <div class="image-actions">
+                                    <button type="button" id="copy-image-btn" class="action-btn" title="Copiar link da imagem"><i class="fas fa-copy"></i></button>
+                                    <button type="button" id="remove-image-btn" class="action-btn" title="Remover imagem"><i class="fas fa-trash"></i></button>
+                                </div>
+                            </div>
                         </div>
+                        <input type="file" id="image" name="image" accept="image/*" style="display: none;">
                     </div>
                     
                     <div class="btn-group">
@@ -229,17 +239,161 @@ $products = $db->query("SELECT * FROM products WHERE $userFilter ORDER BY create
     </div>
 </div>
 
+<style>
+.image-uploader {
+    position: relative;
+    border: 2px dashed #ccc;
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    background: #f8f9fa;
+    transition: background 0.2s, border-color 0.2s;
+    min-height: 180px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+.image-uploader:hover, .image-uploader.dragover {
+    background: #e9ecef;
+    border-color: #3b82f6;
+}
+.uploader-instructions {
+    color: #6c757d;
+}
+.uploader-instructions i {
+    font-size: 40px;
+    margin-bottom: 10px;
+    display: block;
+}
+.image-preview {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+.image-preview img {
+    max-width: 100%;
+    max-height: 200px;
+    border-radius: 5px;
+}
+.image-actions {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: flex;
+    gap: 10px;
+}
+.action-btn {
+    background: rgba(0,0,0,0.6);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 35px;
+    height: 35px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    transition: background 0.2s;
+}
+.action-btn:hover {
+    background: rgba(0,0,0,0.8);
+}
+</style>
+
 <script>
-// Preview de imagem
-document.getElementById('image').addEventListener('change', function(e) {
+// Novo componente de upload de imagem
+const uploader = document.getElementById('image-uploader');
+const fileInput = document.getElementById('image');
+const instructions = uploader.querySelector('.uploader-instructions');
+const preview = uploader.querySelector('.image-preview');
+const previewImg = document.getElementById('preview-img');
+const removeBtn = document.getElementById('remove-image-btn');
+const copyBtn = document.getElementById('copy-image-btn');
+
+// Abrir seletor de arquivo ao clicar
+uploader.addEventListener('click', (e) => {
+    if (e.target !== removeBtn && e.target.parentElement !== removeBtn && e.target !== copyBtn && e.target.parentElement !== copyBtn) {
+        fileInput.click();
+    }
+});
+
+// Highlight ao arrastar
+uploader.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    uploader.classList.add('dragover');
+});
+uploader.addEventListener('dragleave', () => {
+    uploader.classList.remove('dragover');
+});
+
+// Lidar com o drop
+uploader.addEventListener('drop', (e) => {
+    e.preventDefault();
+    uploader.classList.remove('dragover');
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+        fileInput.files = files;
+        handleFile(files[0]);
+    }
+});
+
+// Lidar com o paste
+document.addEventListener('paste', (e) => {
+    const items = e.clipboardData.items;
+    for (const item of items) {
+        if (item.type.indexOf('image') !== -1) {
+            const file = item.getAsFile();
+            const dataTransfer = new DataTransfer();
+            dataTransfer.items.add(file);
+            fileInput.files = dataTransfer.files;
+            handleFile(file);
+            break;
+        }
+    }
+});
+
+
+// Lidar com a seleção do arquivo
+fileInput.addEventListener('change', (e) => {
     const file = e.target.files[0];
     if (file) {
+        handleFile(file);
+    }
+});
+
+function handleFile(file) {
+    if (file) {
         const reader = new FileReader();
-        reader.onload = function(e) {
-            document.getElementById('previewImg').src = e.target.result;
-            document.getElementById('imagePreview').style.display = 'block';
-        }
+        reader.onload = (e) => {
+            previewImg.src = e.target.result;
+            instructions.style.display = 'none';
+            preview.style.display = 'block';
+            copyBtn.style.display = 'none'; // Oculta o botão de cópia para novas imagens
+        };
         reader.readAsDataURL(file);
+    }
+}
+
+// Remover imagem
+removeBtn.addEventListener('click', () => {
+    fileInput.value = ''; // Limpa o input
+    previewImg.src = '#';
+    preview.style.display = 'none';
+    instructions.style.display = 'block';
+});
+
+// Copiar link da imagem
+copyBtn.addEventListener('click', () => {
+    const imageUrl = previewImg.src;
+    if (imageUrl && !imageUrl.startsWith('data:')) {
+        navigator.clipboard.writeText(imageUrl).then(() => {
+            Utils.showAlert('Link da imagem copiado!', 'success');
+        }).catch(err => {
+            Utils.showAlert('Falha ao copiar o link.', 'error');
+        });
     }
 });
 
@@ -252,6 +406,11 @@ document.getElementById('productForm').addEventListener('submit', async function
     
     if (productId) {
         formData.set('action', 'update');
+    }
+
+    // Se a imagem foi removida no frontend, precisamos informar o backend
+    if (preview.style.display === 'none') {
+        formData.append('remove_image', 'true');
     }
     
     try {
@@ -286,8 +445,12 @@ function editarProduto(product) {
     document.getElementById('type').value = product.type;
     
     if (product.image) {
-        document.getElementById('previewImg').src = '<?php echo BASE_URL; ?>' + product.image;
-        document.getElementById('imagePreview').style.display = 'block';
+        previewImg.src = '<?php echo BASE_URL; ?>' + product.image;
+        instructions.style.display = 'none';
+        preview.style.display = 'block';
+        copyBtn.style.display = 'block'; // Mostra o botão de cópia para imagens existentes
+    } else {
+        limparFormularioImagem();
     }
     
     document.querySelector('input[name="action"]').value = 'update';
@@ -321,11 +484,18 @@ async function excluirProduto(id) {
     }
 }
 
+function limparFormularioImagem() {
+    fileInput.value = '';
+    previewImg.src = '#';
+    preview.style.display = 'none';
+    instructions.style.display = 'block';
+}
+
 // Limpar formulário
 function limparFormulario() {
     document.getElementById('productForm').reset();
     document.getElementById('product_id').value = '';
-    document.getElementById('imagePreview').style.display = 'none';
+    limparFormularioImagem();
     document.querySelector('input[name="action"]').value = 'create';
 }
 

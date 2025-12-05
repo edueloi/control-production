@@ -71,6 +71,14 @@ try {
             $currentProduct = $stmt->fetch(PDO::FETCH_ASSOC);
             $imagePath = $currentProduct['image'];
             
+            // Lógica de remoção de imagem
+            if (isset($_POST['remove_image']) && $_POST['remove_image'] === 'true' && !isset($_FILES['image'])) {
+                if ($imagePath && file_exists(__DIR__ . '/../' . $imagePath)) {
+                    unlink(__DIR__ . '/../' . $imagePath);
+                }
+                $imagePath = null;
+            }
+
             // Upload de nova imagem
             if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
                 $uploadDir = UPLOAD_DIR . 'products/';
@@ -78,7 +86,7 @@ try {
                     mkdir($uploadDir, 0777, true);
                 }
                 
-                // Remover imagem antiga
+                // Remover imagem antiga se houver uma nova
                 if ($imagePath && file_exists(__DIR__ . '/../' . $imagePath)) {
                     unlink(__DIR__ . '/../' . $imagePath);
                 }
@@ -89,6 +97,8 @@ try {
                 
                 if (move_uploaded_file($_FILES['image']['tmp_name'], $targetPath)) {
                     $imagePath = 'uploads/products/' . $filename;
+                } else {
+                    $imagePath = $currentProduct['image']; // Mantém a imagem antiga se o upload falhar
                 }
             }
             
