@@ -74,15 +74,26 @@ $activityList = $activities->fetchAll(PDO::FETCH_ASSOC);
 
             <div class="form-row">
                 <!-- Informações do Perfil -->
-                <div style="flex: 2;">
-                    <div class="card">
-                        <div class="card-header">
-                            <h3><i class="fas fa-user-edit"></i> Informações Pessoais</h3>
-                        </div>
-
-                        <form method="POST">
+                        <form method="POST" enctype="multipart/form-data">
                             <input type="hidden" name="action" value="update_profile">
                             
+                            <!-- Uploader de Avatar -->
+                            <div class="form-group" style="display: flex; justify-content: center;">
+                                <div id="image-uploader" class="image-uploader" style="width: 150px; height: 150px; border-radius: 50%;">
+                                    <div class="uploader-instructions">
+                                        <i class="fas fa-camera"></i>
+                                        <p style="font-size: 12px;">Avatar</p>
+                                    </div>
+                                    <div class="image-preview" style="display: none;">
+                                        <img id="preview-img" src="#" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+                                        <div class="image-actions">
+                                            <button type="button" id="remove-image-btn" class="action-btn" title="Remover imagem"><i class="fas fa-trash"></i></button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <input type="file" id="image" name="avatar" accept="image/*" style="display: none;">
+                            </div>
+
                             <div class="form-group">
                                 <label><i class="fas fa-user"></i> Nome Completo *</label>
                                 <input type="text" name="name" value="<?php echo htmlspecialchars($user['name']); ?>" required>
@@ -144,9 +155,6 @@ $activityList = $activities->fetchAll(PDO::FETCH_ASSOC);
                 <!-- Cartão de Perfil -->
                 <div style="flex: 1;">
                     <div class="card" style="text-align: center;">
-                        <div style="width: 120px; height: 120px; margin: 0 auto var(--spacing-lg); background: linear-gradient(135deg, var(--primary-color), var(--primary-light)); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 48px; color: white; box-shadow: var(--shadow-lg);">
-                            <i class="fas fa-user"></i>
-                        </div>
                         
                         <h2 style="font-size: 24px; margin-bottom: var(--spacing-xs); color: var(--text-primary);">
                             <?php echo htmlspecialchars($user['name']); ?>
