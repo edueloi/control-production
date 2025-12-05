@@ -73,7 +73,13 @@ $activityList = $activities->fetchAll(PDO::FETCH_ASSOC);
             </div>
 
             <div class="form-row">
-                <!-- Informações do Perfil -->
+                <!-- Coluna da Esquerda: Formulários -->
+                <div style="flex: 2;">
+                    <!-- Informações do Perfil -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-user-edit"></i> Informações Pessoais</h3>
+                        </div>
                         <form method="POST" enctype="multipart/form-data">
                             <input type="hidden" name="action" value="update_profile">
                             
@@ -110,11 +116,6 @@ $activityList = $activities->fetchAll(PDO::FETCH_ASSOC);
                                 <input type="text" name="phone" value="<?php echo htmlspecialchars($user['phone'] ?? ''); ?>" placeholder="(00) 00000-0000">
                             </div>
 
-                            <div class="form-group">
-                                <label><i class="fas fa-calendar"></i> Membro desde</label>
-                                <input type="text" value="<?php echo date('d/m/Y', strtotime($user['created_at'])); ?>" disabled>
-                            </div>
-
                             <button type="submit" class="btn btn-primary">
                                 <i class="fas fa-save"></i> Salvar Alterações
                             </button>
@@ -126,25 +127,20 @@ $activityList = $activities->fetchAll(PDO::FETCH_ASSOC);
                         <div class="card-header">
                             <h3><i class="fas fa-lock"></i> Alterar Senha</h3>
                         </div>
-
                         <form method="POST">
                             <input type="hidden" name="action" value="change_password">
-                            
                             <div class="form-group">
                                 <label><i class="fas fa-key"></i> Senha Atual *</label>
                                 <input type="password" name="current_password" required>
                             </div>
-
                             <div class="form-group">
                                 <label><i class="fas fa-lock"></i> Nova Senha *</label>
                                 <input type="password" name="new_password" required minlength="6">
                             </div>
-
                             <div class="form-group">
                                 <label><i class="fas fa-lock"></i> Confirmar Nova Senha *</label>
                                 <input type="password" name="confirm_password" required minlength="6">
                             </div>
-
                             <button type="submit" class="btn btn-warning">
                                 <i class="fas fa-shield-alt"></i> Alterar Senha
                             </button>
@@ -152,18 +148,15 @@ $activityList = $activities->fetchAll(PDO::FETCH_ASSOC);
                     </div>
                 </div>
 
-                <!-- Cartão de Perfil -->
+                <!-- Coluna da Direita: Cartão de Perfil e Atividades -->
                 <div style="flex: 1;">
                     <div class="card" style="text-align: center;">
-                        
                         <h2 style="font-size: 24px; margin-bottom: var(--spacing-xs); color: var(--text-primary);">
                             <?php echo htmlspecialchars($user['name']); ?>
                         </h2>
-                        
                         <p style="color: var(--text-muted); margin-bottom: var(--spacing-lg);">
                             <?php echo htmlspecialchars($user['email']); ?>
                         </p>
-
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-md); margin-top: var(--spacing-xl);">
                             <div style="padding: var(--spacing-md); background: var(--bg-secondary); border-radius: var(--radius-md);">
                                 <div style="font-size: 13px; color: var(--text-muted); margin-bottom: var(--spacing-xs);">Função</div>
@@ -179,13 +172,10 @@ $activityList = $activities->fetchAll(PDO::FETCH_ASSOC);
                             </div>
                         </div>
                     </div>
-
-                    <!-- Atividades Recentes -->
                     <div class="card">
                         <div class="card-header">
                             <h3><i class="fas fa-history"></i> Atividades Recentes</h3>
                         </div>
-                        
                         <?php if (count($activityList) > 0): ?>
                             <div style="display: flex; flex-direction: column; gap: var(--spacing-sm);">
                                 <?php foreach ($activityList as $activity): ?>
