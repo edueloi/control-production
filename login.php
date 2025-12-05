@@ -71,7 +71,7 @@ $pageTitle = 'Login';
         </form>
         
         <div class="auth-footer">
-            Não tem uma conta? <a href="<?php echo BASE_URL; ?>register.php">Registe-se aqui</a>
+            <!-- O link de registro foi removido a pedido do cliente -->
         </div>
     </div>
 </div>

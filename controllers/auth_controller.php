@@ -109,24 +109,82 @@ try {
             exit;
             break;
             
-        case 'recover':
+        case 'forgot_password':
             $email = sanitizeInput($_POST['email']);
             
-            $stmt = $db->prepare("SELECT id FROM users WHERE email = ?");
+            $stmt = $db->prepare("SELECT id FROM users WHERE email = ? AND status = 'active'");
             $stmt->execute([$email]);
+            $user = $stmt->fetch();
             
-            if ($stmt->fetch()) {
-                // Aqui você implementaria o envio de e-mail
-                // Por enquanto, vamos apenas mostrar uma mensagem de sucesso
-                setSuccessMessage('Instruções de recuperação foram enviadas para seu e-mail!');
+            if ($user) {
+                // Gerar token seguro
+                $token = bin2hex(random_bytes(32));
+                $tokenHash = hash('sha256', $token);
+                
+                // Definir tempo de expiração (1 hora)
+                $expires = new DateTime('now', new DateTimeZone('America/Sao_Paulo'));
+                $expires->add(new DateInterval('PT1H'));
+                $expiresFormatted = $expires->format('Y-m-d H:i:s');
+                
+                // Salvar token no banco
+                $stmt = $db->prepare("UPDATE users SET reset_token = ?, reset_expires = ? WHERE id = ?");
+                $stmt->execute([$tokenHash, $expiresFormatted, $user['id']]);
+                
+                // Simulação de envio de email
+                $recoveryLink = BASE_URL . 'recover.php?token=' . $token;
+                setSuccessMessage("Se um usuário com este e-mail existir, um link de recuperação foi 'enviado'. Link para teste: <a href='{$recoveryLink}'>{$recoveryLink}</a>");
             } else {
-                setSuccessMessage('Se o e-mail estiver cadastrado, você receberá as instruções.');
+                // Mensagem genérica para não revelar se o e-mail existe
+                setSuccessMessage("Se um usuário com este e-mail existir, um link de recuperação foi 'enviado'.");
             }
             
-            header('Location: ../login.php');
+            header('Location: ../forgot-password.php');
             exit;
             break;
             
+        case 'reset_password':
+            $token = $_POST['token'] ?? null;
+            $password = $_POST['password'] ?? null;
+            $confirmPassword = $_POST['confirm_password'] ?? null;
+
+            if (!$token || !$password || !$confirmPassword) {
+                setErrorMessage('Todos os campos são obrigatórios.');
+                header('Location: ' . BASE_URL . 'recover.php?token=' . urlencode($token));
+                exit;
+            }
+
+            if ($password !== $confirmPassword) {
+                setErrorMessage('As senhas não coincidem.');
+                header('Location: ' . BASE_URL . 'recover.php?token=' . urlencode($token));
+                exit;
+            }
+
+            if (strlen($password) < 6) {
+                setErrorMessage('A senha deve ter pelo menos 6 caracteres.');
+                header('Location: ' . BASE_URL . 'recover.php?token=' . urlencode($token));
+                exit;
+            }
+
+            $tokenHash = hash('sha256', $token);
+            $stmt = $db->prepare("SELECT id FROM users WHERE reset_token = ? AND reset_expires > datetime('now', 'localtime')");
+            $stmt->execute([$tokenHash]);
+            $user = $stmt->fetch();
+
+            if ($user) {
+                $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+                $stmt = $db->prepare("UPDATE users SET password = ?, reset_token = NULL, reset_expires = NULL WHERE id = ?");
+                $stmt->execute([$hashedPassword, $user['id']]);
+
+                setSuccessMessage('Sua senha foi redefinida com sucesso! Você já pode fazer login.');
+                header('Location: ' . BASE_URL . 'login.php');
+                exit;
+            } else {
+                setErrorMessage('Token inválido ou expirado. Por favor, solicite uma nova recuperação.');
+                header('Location: ' . BASE_URL . 'forgot-password.php');
+                exit;
+            }
+            break;
+
         default:
             setErrorMessage('Ação inválida!');
             header('Location: ' . BASE_URL . 'login.php');
